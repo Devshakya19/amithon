@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>My Learning Journey | AMITHON</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "on-tertiary-fixed-variant": "#5a00c6",
+                    "on-primary-fixed": "#00174b",
+                    "inverse-on-surface": "#303036",
+                    "on-secondary-fixed-variant": "#653e00",
+                    "tertiary-container": "#8343f4",
+                    "error-container": "#93000a",
+                    "surface-container-low": "#1b1b20",
+                    "on-error-container": "#ffdad6",
+                    "secondary-fixed-dim": "#ffb95f",
+                    "on-primary-fixed-variant": "#003ea8",
+                    "on-surface-variant": "#c3c6d7",
+                    "primary-fixed": "#dbe1ff",
+                    "surface-variant": "#35343a",
+                    "secondary-container": "#ee9800",
+                    "surface-tint": "#b4c5ff",
+                    "background": "#131318",
+                    "tertiary": "#d2bbff",
+                    "surface-bright": "#39383e",
+                    "tertiary-fixed-dim": "#d2bbff",
+                    "surface-container-high": "#2a292f",
+                    "on-tertiary": "#3f008e",
+                    "on-error": "#690005",
+                    "secondary-fixed": "#ffddb8",
+                    "tertiary-fixed": "#eaddff",
+                    "on-surface": "#e4e1e9",
+                    "surface-container-highest": "#35343a",
+                    "on-background": "#e4e1e9",
+                    "on-tertiary-fixed": "#25005a",
+                    "on-primary-container": "#eeefff",
+                    "surface-container": "#1f1f25",
+                    "on-secondary": "#472a00",
+                    "primary": "#b4c5ff",
+                    "secondary": "#ffb95f",
+                    "outline-variant": "#434655",
+                    "primary-container": "#2563eb",
+                    "on-primary": "#002a78",
+                    "on-secondary-fixed": "#2a1700",
+                    "primary-fixed-dim": "#b4c5ff",
+                    "inverse-surface": "#e4e1e9",
+                    "inverse-primary": "#0053db",
+                    "on-tertiary-container": "#f7edff",
+                    "surface": "#131318",
+                    "surface-container-lowest": "#0e0e13",
+                    "on-secondary-container": "#5b3800",
+                    "error": "#ffb4ab",
+                    "surface-dim": "#131318",
+                    "outline": "#8d90a0"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "unit": "4px",
+                    "container-max": "1280px",
+                    "margin-mobile": "16px",
+                    "gutter": "24px",
+                    "margin-desktop": "64px"
+            },
+            "fontFamily": {
+                    "headline-md": ["Inter"],
+                    "body-md": ["Inter"],
+                    "headline-lg": ["Inter"],
+                    "display-lg-mobile": ["Inter"],
+                    "body-lg": ["Inter"],
+                    "label-md": ["Inter"],
+                    "display-lg": ["Inter"]
+            },
+            "fontSize": {
+                    "headline-md": ["24px", {"lineHeight": "1.3", "fontWeight": "600"}],
+                    "body-md": ["16px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                    "headline-lg": ["32px", {"lineHeight": "1.2", "fontWeight": "700"}],
+                    "display-lg-mobile": ["40px", {"lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "800"}],
+                    "body-lg": ["18px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                    "label-md": ["14px", {"lineHeight": "1.0", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                    "display-lg": ["64px", {"lineHeight": "1.1", "letterSpacing": "-0.04em", "fontWeight": "800"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body {
+            background-color: #131318;
+            background-image: 
+                radial-gradient(circle at 2px 2px, rgba(255,255,255,0.05) 1px, transparent 0);
+            background-size: 24px 24px;
+        }
+        .glass-panel {
+            background: rgba(31, 31, 37, 0.4);
+            backdrop-filter: blur(12px);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            border-left: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        .orb-blue {
+            position: fixed;
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, rgba(180, 197, 255, 0.07) 0%, transparent 70%);
+            top: -200px;
+            left: -200px;
+            z-index: -1;
+        }
+        .orb-amber {
+            position: fixed;
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(255, 185, 95, 0.05) 0%, transparent 70%);
+            bottom: -100px;
+            right: -100px;
+            z-index: -1;
+        }
+        .glow-hover:hover {
+            box-shadow: 0 0 20px rgba(180, 197, 255, 0.2);
+            border-color: #b4c5ff;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col font-body-md text-on-surface">
+<div class="orb-blue"></div>
+<div class="orb-amber"></div>
+<!-- TopNavBar -->
+<header class="docked full-width top-0 sticky z-50 bg-surface/80 backdrop-blur-xl border-b border-white/10 shadow-[0_8px_32px_0_rgba(0,0,0,0.37)]">
+<div class="flex justify-between items-center w-full px-margin-desktop py-4 max-w-container-max mx-auto">
+<div class="text-headline-md font-headline-md font-extrabold text-primary flex items-center gap-2">
+                AMITHON
+            </div>
+<nav class="hidden md:flex items-center gap-8">
+<a class="text-on-surface-variant hover:text-primary transition-colors duration-300 text-label-md font-label-md" href="#">Events</a>
+<a class="text-on-surface-variant hover:text-primary transition-colors duration-300 text-label-md font-label-md" href="#">Schedule</a>
+<a class="text-primary border-b-2 border-primary font-bold pb-1 text-label-md font-label-md" href="#">Dashboard</a>
+<a class="text-on-surface-variant hover:text-primary transition-colors duration-300 text-label-md font-label-md" href="#">Profile</a>
+</nav>
+<div class="flex items-center gap-4">
+<div class="hidden lg:flex items-center bg-white/5 rounded-full px-4 py-2 border border-white/10">
+<span class="material-symbols-outlined text-on-surface-variant mr-2">search</span>
+<input class="bg-transparent border-none focus:ring-0 text-body-md text-on-surface placeholder:text-on-surface-variant/50 w-48" placeholder="Search events..." type="text"/>
+</div>
+<div class="flex items-center gap-2">
+<button class="p-2 text-on-surface-variant hover:bg-white/5 rounded-full transition-all duration-200">
+<span class="material-symbols-outlined">rocket_launch</span>
+</button>
+<button class="p-2 text-on-surface-variant hover:bg-white/5 rounded-full transition-all duration-200 relative">
+<span class="material-symbols-outlined">notifications</span>
+<span class="absolute top-2 right-2 w-2 h-2 bg-secondary rounded-full"></span>
+</button>
+<button class="p-2 text-on-surface-variant hover:bg-white/5 rounded-full transition-all duration-200">
+<span class="material-symbols-outlined">account_circle</span>
+</button>
+</div>
+</div>
+</div>
+</header>
+<main class="flex-grow w-full max-w-container-max mx-auto px-margin-desktop py-12">
+<!-- Header Section -->
+<header class="mb-12">
+<h1 class="text-display-lg font-display-lg text-on-surface mb-2">My Learning Journey</h1>
+<p class="text-body-lg text-on-surface-variant">Track your technical growth, manage upcoming hackathons, and access your credentials.</p>
+</header>
+<div class="grid grid-cols-12 gap-gutter">
+<!-- Left Column: Profile & Certificates -->
+<div class="col-span-12 lg:col-span-4 space-y-gutter">
+<!-- Profile Quick-view -->
+<section class="glass-panel rounded-xl p-8 border border-white/5">
+<div class="flex items-center gap-6 mb-8">
+<div class="relative">
+<div class="w-20 h-20 rounded-full overflow-hidden border-2 border-primary p-1">
+<img alt="Profile Picture" class="w-full h-full object-cover rounded-full" data-alt="A professional portrait of a young male computer science student in a dark-lit, technical environment with subtle blue neon accents in the background. He wears a sleek, modern hoodie and glasses, looking confident and focused. The lighting is low-key and dramatic, emphasizing a high-tech developer aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuD-sEKhAmnjj065-FP6hxb4jgLH_djl6PhxbrW_pK4ITHlRc4MWd0QdcfxtC8ZK7W-xwN_hnUwsF-9BpGzZEGb57hGLV31Pizr0L4OTT0Xo9nKpYRrlpJTk6JwMUXs5IJT7piSdMy32r8YjkYo4AJ4gncQg1lVbeAwycqB8siIqanMrrC_FfX25YUyPfiF86YW_CX4wYJMjfrSEcch3uf2jTh8uycAdZ_21EJrDWbs7jnFyW88yRPOxGW5DBIHvSMtYjmpsm9d8xgY"/>
+</div>
+<span class="absolute bottom-1 right-1 w-5 h-5 bg-green-500 border-4 border-surface rounded-full"></span>
+</div>
+<div>
+<h2 class="text-headline-md font-headline-md text-on-surface">Alex Rivera</h2>
+<p class="text-label-md font-label-md text-primary tracking-widest uppercase">Verified Student</p>
+</div>
+</div>
+<div class="space-y-4 pt-6 border-t border-white/5">
+<div class="flex justify-between items-center">
+<span class="text-label-md text-on-surface-variant uppercase">Enrollment No</span>
+<span class="text-body-md font-bold font-mono">AMU-2024-8842</span>
+</div>
+<div class="flex justify-between items-center">
+<span class="text-label-md text-on-surface-variant uppercase">Department</span>
+<span class="text-body-md">Cybersecurity Engineering</span>
+</div>
+<div class="flex justify-between items-center">
+<span class="text-label-md text-on-surface-variant uppercase">Technical Rank</span>
+<span class="text-body-md text-secondary">Elite 5%</span>
+</div>
+</div>
+<button class="w-full mt-8 py-3 bg-white/5 border border-white/10 rounded-lg text-label-md font-label-md hover:bg-white/10 transition-all text-on-surface">
+                        View Full Portfolio
+                    </button>
+</section>
+<!-- Download Certificates -->
+<section class="glass-panel rounded-xl p-8 border border-white/5">
+<div class="flex items-center justify-between mb-6">
+<h3 class="text-headline-md font-headline-md">Certificates</h3>
+<span class="material-symbols-outlined text-on-surface-variant">workspace_premium</span>
+</div>
+<div class="space-y-3">
+<div class="flex items-center justify-between p-4 bg-white/5 rounded-lg group hover:bg-white/10 transition-all border border-transparent hover:border-primary/30">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-primary">verified</span>
+<div>
+<p class="text-body-md font-semibold">Cloud Native Workshop</p>
+<p class="text-label-md text-on-surface-variant">Issued Oct 2024</p>
+</div>
+</div>
+<button class="p-2 bg-primary/10 rounded-full text-primary hover:bg-primary hover:text-on-primary transition-colors">
+<span class="material-symbols-outlined">download</span>
+</button>
+</div>
+<div class="flex items-center justify-between p-4 bg-white/5 rounded-lg group hover:bg-white/10 transition-all border border-transparent hover:border-primary/30">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-primary">verified</span>
+<div>
+<p class="text-body-md font-semibold">AMITHON 2023 Runner Up</p>
+<p class="text-label-md text-on-surface-variant">Issued Dec 2023</p>
+</div>
+</div>
+<button class="p-2 bg-primary/10 rounded-full text-primary hover:bg-primary hover:text-on-primary transition-colors">
+<span class="material-symbols-outlined">download</span>
+</button>
+</div>
+</div>
+</section>
+</div>
+<!-- Right Column: Registered Events (Bento Grid) -->
+<div class="col-span-12 lg:col-span-8 space-y-gutter">
+<section>
+<div class="flex items-center justify-between mb-6">
+<h3 class="text-headline-md font-headline-md">Registered Events</h3>
+<div class="flex gap-2">
+<button class="px-4 py-1.5 rounded-full bg-primary text-on-primary text-label-md font-label-md">All</button>
+<button class="px-4 py-1.5 rounded-full bg-white/5 text-on-surface-variant text-label-md font-label-md hover:bg-white/10">Active</button>
+</div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+<!-- Ongoing Event -->
+<div class="glass-panel rounded-xl overflow-hidden border border-white/10 glow-hover transition-all group flex flex-col">
+<div class="h-40 overflow-hidden relative">
+<img alt="Cybersecurity Event" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" data-alt="A high-tech digital circuit board background with glowing lines of data and futuristic blue light streaks. The composition is sleek and professional, conveying a sense of deep technology and cybersecurity. Dark tones dominate the aesthetic with vibrant electric blue highlights creating depth and motion." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBiZQ2wxmrH-5XtzRkTExgXu4CmoYzIjCB3KGyhcMDUCWRnPgkAsTROGGL56alW4PnkABCgdYIian1B1CwYDh8QKcyV-HYCsoz5Al9Uve3yD9n2ouvoOzBV9ZEjymtC76kys4_GBG6fpQYbnK3FShXJ_fmCwbaMtOA5JFXQAAChJsRI6AS7I_SXikj6hjHpw1Ijy01wGSIBMe0E02FOPtFdK_1-6MO_2MNEUAevVNwVCazrAFl6osSpovE5zZqywYoFVfemrSFkIQY"/>
+<div class="absolute top-4 right-4 px-3 py-1 bg-secondary text-on-secondary rounded-full text-label-md font-label-md flex items-center gap-1">
+<span class="w-2 h-2 bg-white rounded-full animate-pulse"></span> Ongoing
+                                </div>
+</div>
+<div class="p-6 flex-grow flex flex-col">
+<h4 class="text-headline-md font-headline-md mb-2">Defense Matrix Hackathon</h4>
+<p class="text-body-md text-on-surface-variant mb-6 flex-grow line-clamp-2">24-hour offensive security challenge focusing on zero-trust architectures.</p>
+<div class="flex items-center justify-between mt-auto">
+<div class="flex items-center gap-2 text-on-surface-variant">
+<span class="material-symbols-outlined text-body-md">schedule</span>
+<span class="text-label-md">Ends in 4h 12m</span>
+</div>
+<button class="bg-primary px-6 py-2 rounded-lg text-on-primary text-label-md font-label-md">Enter Portal</button>
+</div>
+</div>
+</div>
+<!-- Upcoming Event -->
+<div class="glass-panel rounded-xl overflow-hidden border border-white/10 glow-hover transition-all group flex flex-col">
+<div class="h-40 overflow-hidden relative">
+<img alt="AI Summit" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" data-alt="An abstract visualization of a neural network with luminous connections and soft purple and blue gradients. The style is modern 3D digital art, emphasizing artificial intelligence and machine learning. A clean, minimalist technical grid is visible in the background, maintaining a premium technical look." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAvDKZANCEeFTT0eAxwHU-K99me13rOaDr-I1lUGb0EdSCHFe6WMQ3kwRIBMK26wpJi3Q4w8WUMG2fbh7-0HCpMtFwyA45PjERsIPjGOHnLwvvp847D6k6qR28vxiPQRRdKkLFOtTog4fl7B38QOGqUQWKu0kWYpY9oLs2Whr4GeJocp4abKO9F1WWtRNYDi7wqT0wExvN2NHEjCif5XODRweJmUon7aFunSamR1OVBRuZA5SpzOJoKL-W5Yah--czFe2qsIVVL0q4"/>
+<div class="absolute top-4 right-4 px-3 py-1 bg-tertiary text-on-tertiary rounded-full text-label-md font-label-md">
+                                    Upcoming
+                                </div>
+</div>
+<div class="p-6 flex-grow flex flex-col">
+<h4 class="text-headline-md font-headline-md mb-2">Neural Synthesis Summit</h4>
+<p class="text-body-md text-on-surface-variant mb-6 flex-grow line-clamp-2">A masterclass in Large Language Models and generative transformers.</p>
+<div class="flex items-center justify-between mt-auto">
+<div class="flex items-center gap-2 text-on-surface-variant">
+<span class="material-symbols-outlined text-body-md">calendar_today</span>
+<span class="text-label-md">Starts Nov 15</span>
+</div>
+<button class="bg-white/5 border border-white/10 px-6 py-2 rounded-lg text-on-surface text-label-md font-label-md hover:bg-white/10 transition-colors">Details</button>
+</div>
+</div>
+</div>
+<!-- Completed Event (Wide) -->
+<div class="glass-panel rounded-xl border border-white/10 glow-hover transition-all group md:col-span-2 p-6 flex flex-col md:flex-row gap-6">
+<div class="w-full md:w-1/3 h-40 md:h-auto rounded-lg overflow-hidden relative">
+<img alt="Hardware Workshop" class="w-full h-full object-cover group-hover:scale-105 transition-all duration-500" data-alt="A close-up of high-performance server hardware inside a data center, illuminated by cold blue LED lights. The hardware looks intricate and powerful, representing heavy computational work. The depth of field is shallow, focusing on the textures of the technical components and heat sinks." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDDTT9XgKWrKRQT736ntOXq1tsnrDTDNfsAlmQYFj6PGVVuLAfdGOJjXWOMu7zC3FD5n2GsgnVW2XY0rsH_JATTsIqM5_xfQvLLE7YFFEAyC7eaIh_9wOzAlkoeKdlHPVCUA7punp5No9U33urlXv1g0KefbPmeoZBMPIs0mtKW7ZT4bkBSLHrq-huCEE5P4PwFT-d1GHIkxHSVAQhtFytQclqYTb0yX_G1Ve3m4oVUaLzzSe1u6EmguEXjkkj4IE8WyRwXMGQTzWQ"/>
+<div class="absolute inset-0 bg-black/40 flex items-center justify-center">
+<span class="material-symbols-outlined text-white text-display-lg" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+</div>
+</div>
+<div class="flex-grow flex flex-col justify-center">
+<div class="flex justify-between items-start mb-2">
+<h4 class="text-headline-md font-headline-md">FPGA Core Optimization</h4>
+<span class="px-3 py-1 bg-white/10 text-on-surface-variant rounded-full text-label-md">Completed</span>
+</div>
+<p class="text-body-md text-on-surface-variant mb-6">Mastering low-level hardware acceleration and concurrent processing pipelines.</p>
+<div class="flex gap-4">
+<div class="flex-1 bg-white/5 rounded-lg p-4">
+<p class="text-label-md text-on-surface-variant uppercase mb-1">Final Score</p>
+<p class="text-headline-md font-bold text-primary">94/100</p>
+</div>
+<div class="flex-1 bg-white/5 rounded-lg p-4">
+<p class="text-label-md text-on-surface-variant uppercase mb-1">Feedback</p>
+<p class="text-headline-md font-bold text-secondary">Excellent</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Data Visualizer Placeholder -->
+<section class="glass-panel rounded-xl p-8 border border-white/10 overflow-hidden relative">
+<div class="relative z-10">
+<h3 class="text-headline-md font-headline-md mb-6">Skill Distribution</h3>
+<div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+<div class="text-center">
+<div class="relative w-20 h-20 mx-auto mb-2 flex items-center justify-center">
+<svg class="w-full h-full" viewbox="0 0 36 36">
+<path class="text-white/5 stroke-current" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke-width="3"></path>
+<path class="text-primary stroke-current" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke-dasharray="85, 100" stroke-linecap="round" stroke-width="3"></path>
+</svg>
+<span class="absolute text-label-md font-bold">85%</span>
+</div>
+<p class="text-label-md text-on-surface-variant">Cloud</p>
+</div>
+<div class="text-center">
+<div class="relative w-20 h-20 mx-auto mb-2 flex items-center justify-center">
+<svg class="w-full h-full" viewbox="0 0 36 36">
+<path class="text-white/5 stroke-current" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke-width="3"></path>
+<path class="text-secondary stroke-current" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke-dasharray="92, 100" stroke-linecap="round" stroke-width="3"></path>
+</svg>
+<span class="absolute text-label-md font-bold">92%</span>
+</div>
+<p class="text-label-md text-on-surface-variant">Cyber</p>
+</div>
+<div class="text-center">
+<div class="relative w-20 h-20 mx-auto mb-2 flex items-center justify-center">
+<svg class="w-full h-full" viewbox="0 0 36 36">
+<path class="text-white/5 stroke-current" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke-width="3"></path>
+<path class="text-tertiary stroke-current" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke-dasharray="64, 100" stroke-linecap="round" stroke-width="3"></path>
+</svg>
+<span class="absolute text-label-md font-bold">64%</span>
+</div>
+<p class="text-label-md text-on-surface-variant">AI/ML</p>
+</div>
+<div class="text-center">
+<div class="relative w-20 h-20 mx-auto mb-2 flex items-center justify-center">
+<svg class="w-full h-full" viewbox="0 0 36 36">
+<path class="text-white/5 stroke-current" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke-width="3"></path>
+<path class="text-error stroke-current" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke-dasharray="40, 100" stroke-linecap="round" stroke-width="3"></path>
+</svg>
+<span class="absolute text-label-md font-bold">40%</span>
+</div>
+<p class="text-label-md text-on-surface-variant">DevOps</p>
+</div>
+</div>
+</div>
+</section>
+</div>
+</div>
+</main>
+<!-- Footer -->
+<footer class="docked full-width mt-auto bg-surface-container-lowest/90 backdrop-blur-lg border-t border-white/5">
+<div class="grid grid-cols-1 md:grid-cols-2 gap-gutter px-margin-desktop py-12 max-w-container-max mx-auto items-center">
+<div class="space-y-4">
+<div class="text-headline-sm font-headline-sm font-bold text-primary">AMITHON</div>
+<p class="text-body-md text-on-surface-variant max-w-md">The premier technical exploration portal for students, engineers, and visionaries within the Amity University ecosystem.</p>
+<p class="text-body-md font-body-md text-on-surface-variant">© 2024 AMITHON Technical Portal | Amity University Credentials</p>
+</div>
+<div class="flex flex-col md:items-end gap-6">
+<nav class="flex flex-wrap gap-x-8 gap-y-2 justify-start md:justify-end">
+<a class="text-on-surface-variant hover:text-secondary transition-colors duration-200 text-label-md font-label-md" href="#">Terms of Service</a>
+<a class="text-on-surface-variant hover:text-secondary transition-colors duration-200 text-label-md font-label-md" href="#">Privacy Policy</a>
+<a class="text-on-surface-variant hover:text-secondary transition-colors duration-200 text-label-md font-label-md" href="#">University Portal</a>
+<a class="text-on-surface-variant hover:text-secondary transition-colors duration-200 text-label-md font-label-md" href="#">Technical Support</a>
+</nav>
+<div class="flex gap-4">
+<button class="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center hover:bg-primary/20 transition-all">
+<span class="material-symbols-outlined text-body-md">language</span>
+</button>
+<button class="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center hover:bg-primary/20 transition-all">
+<span class="material-symbols-outlined text-body-md">share</span>
+</button>
+</div>
+</div>
+</div>
+</footer>
+</body></html>

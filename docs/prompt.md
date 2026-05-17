@@ -4,7 +4,26 @@
 
 Design a complete UI for **Amithon**, a technical events portal for Amity University Gwalior. This platform allows students to discover/register for events, coordinators to create/manage events, faculty to oversee events, and HOI to have full administration access.
 
+**Brand Colors:**
+- Primary: #FF6F00 (Amity Orange)
+- Primary Light: #FF8F00
+- Primary Dark: #E65100
+- Secondary: #1E3A8A (Navy Blue)
+- Accent: #F59E0B (Gold)
+- Background: #FFFFFF
+- Surface: #F8FAFC
+- Text Primary: #0F172A
+- Text Muted: #64748B
+- Border: #E2E8F0
+- Success: #10B981
+- Error: #EF4444
 
+**Typography:**
+- Font: Geist Sans (system)
+- Headings: Bold, tight tracking
+- Body: Regular, 16px base
+
+---
 
 ## ANIMATION & 3D REQUIREMENTS (CRITICAL)
 
@@ -49,16 +68,16 @@ This is a MANDATORY section. Every page MUST include the following animation tre
 
 ## DESIGN SYSTEM
 
-### Components Layout
-- **Navbar**: Fixed top, blurred background, logo + nav links + auth buttons
-- **Sidebar**: Left sidebar for dashboards, collapsible on mobile
-- **Footer**: Dark background, 4-column layout, social links
-- **Cards**: White bg, border, rounded-2xl, hover elevation
-- **Buttons**: Orange primary, navy secondary, outline variants
-- **Forms**: Clean inputs with orange focus ring
-- **Badges**: Rounded-full, color variants per status
-- **Tables**: Bordered, striped rows for data display
-- **Modals**: Centered overlay for confirmations
+### Components Layout + Animations
+- **Navbar**: Fixed top, blurred background, **slide-down on page load**, **hide on scroll-down** / **show on scroll-up**, nav links have **underline hover animation**, **active page indicator** slides smoothly, mobile menu **slide-in from right** with backdrop blur
+- **Sidebar**: Left sidebar for dashboards, **width transition** (expanded 240px / collapsed 64px), icons **center on collapse**, **hover tooltip** for collapsed labels, **active item indicator** slides with smooth spring
+- **Footer**: Dark background, 4-column layout, social links with **hover spin + color fill**, links with **underline expand**
+- **Cards**: White bg, border, rounded-2xl, **hover lift + shadow transition**, **border color morph** on hover, **content stagger fade-in** on appear
+- **Buttons**: **Scale bounce** on click, **loading spinner** smooth rotation, **ripple effect** on click, **gradient shift** on hover, **magnetic movement** toward cursor on marketing pages
+- **Forms**: **Float labels** (label moves up on focus/type), **border glow** transition on focus, **validation shake** on error, **success checkmark** animated fill, **auto-tab** between fields
+- **Badges**: **Pop-in animation** on appear, **pulse variant** for live/ongoing status, **color morph** on status change
+- **Tables**: **Staggered row reveal**, **sort arrow animate** on click, **hover highlight** slide, **pagination** with smooth page transition
+- **Modals**: **Backdrop fade** with blur, **modal scale-in** (0.95 to 1) with spring, **content stagger** on open, **close with scale-down + fade-out**
 
 ---
 
@@ -118,25 +137,25 @@ This is a MANDATORY section. Every page MUST include the following animation tre
 - **Photo Card**: **3D perspective lift** on hover, **image zoom** (scale 1.1) with smooth transition, overlay **slide-up with blur**, "View Photos" button **rotate-in on hover**. **Lightbox modal** with **swipe gesture support** and **animated image transitions**
 
 #### 1.7 FAQ Page `/faq`
-- **Header**: Title "Frequently Asked Questions", subtitle
-- **Category Tabs**: All, General, Events, Registration, Certificates
-- **Accordion List**: Expandable question-answer items with chevron icon rotation
+- **Header**: Title with **fade-in**, animated **decorative line expand**
+- **Category Tabs**: **Animated pill morph** between selections, active tab **bounce**
+- **Accordion List**: Items **slide-up stagger** on scroll, question click has **ripple effect**, answer **expand with height animation** (max-height transition), chevron **smooth rotation** (180deg), hover has **background color transition**
 
 #### 1.8 Contact Page `/contact`
-- **Header**: "Get in Touch" badge, title, subtitle
+- **Header**: Badge with **slide-in**, title **staggered text reveal**, subtitle fade
 - **Two-Column Layout**:
-  - Left: Contact form (name, email, subject, message fields, submit button)
-  - Right: Info cards stack (Address with map pin, Email with mail icon, Phone, Follow Us social links)
+  - Left: Form fields **animate in sequentially** from bottom, each field has **float label animation**, submit button with **loading spinner** and **success checkmark burst**. On success: **confetti** and form **shrink-away with reveal** of thank you message
+  - Right: Info cards **slide-in from right** with stagger, icons **bounce-in**, social links have **hover spin animation**
 
 #### 1.9 Login Page `/login`
 - **Two-Column Layout**:
-  - Left: Form with email input, password input, forgot password link, submit button, divider "or continue with", Google OAuth button, sign up link
-  - Right: Gradient background with motivational content, emoji icons, "Your Gateway to Technical Events" text
+  - Left: Form **fade-in from left**, inputs with **float label animation**, **3D flip-card** effect on form container on load, submit button with **loading ripple**, Google button with **hover brand color fill**, divider with **animated dots**
+  - Right: Gradient background with **animated 3D shapes** floating (spheres, torus), icons **floating up/down** with different speeds (parallax), text **fade-in with blur reveal**
 
 #### 1.10 Register Page `/register`
 - **Two-Column Layout**:
-  - Left: Registration form with First Name, Last Name, Amity Enrollment No, Amity Email, Branch (dropdown), Year (dropdown), Password, Create Account button, Google OAuth, sign in link, terms & privacy notice
-  - Right: Gradient background with benefits list, "Join the Amithon Community" text, checkmark benefits
+  - Left: Multi-step **animated form** with progress indicator (Step 1: Personal, Step 2: Academic, Step 3: Account). Steps **slide left/right** with smooth transitions. Progress bar fills **animated**. Inputs with **float labels**, dropdowns with **animated expand**. Submit button has **loading skeleton → success checkmark → confetti burst**.
+  - Right: Gradient background with **3D floating geometric shapes**, benefits list **stagger fade-in** each with **checkmark draw animation**, icons **floating with different amplitudes**
 
 #### 1.11 404 Not Found Page
 - Centered layout with large "404" text, message, "Go Home" button
@@ -146,13 +165,13 @@ This is a MANDATORY section. Every page MUST include the following animation tre
 ### SECTION 2: STUDENT DASHBOARD PAGES
 
 #### 2.1 Student Dashboard Home `/dashboard`
-- **Layout**: Left sidebar + main content area
-- **Sidebar**: Logo, nav items (Dashboard, My Events, Profile, Certificates, Notifications), user avatar + name at bottom
-- **Welcome Section**: "Welcome back, [Name]!" greeting with current date
-- **Stats Cards Row**: 4 small cards in row - Registered Events, Upcoming Events, Certificates Earned, Notifications
-- **Upcoming Events**: List of next 3 upcoming registered events with date, time, status badge
-- **Recent Activity**: Timeline of recent activity (registration, certificate, etc.)
-- **Quick Actions**: "Browse Events", "My Profile", "My Certificates" buttons
+- **Layout**: Left sidebar with **slide-in animation** on load + main content
+- **Sidebar**: **Collapse/expand animation** with smooth width transition, nav items have **active indicator slide**, icons **bounce on hover**, user avatar **pulse glow**
+- **Welcome Section**: **Typewriter greeting** effect, date with **fade-in**, **3D decorative element** (small glowing orb) in corner
+- **Stats Cards Row**: Cards **stagger slide-up**, numbers **count-up animate** from 0, icons **float animation**
+- **Upcoming Events**: **Animated event list** with **slide-in stagger**, status badges with **pulse animation** (if ongoing), date with **calendar flip animation**
+- **Recent Activity**: **Timeline dots animate in** sequentially, activity items **slide-left** with smooth reveal, **connecting line drawn** from top to bottom
+- **Quick Actions**: Buttons with **hover magnetic effect** (slight movement toward cursor), **icon bounce on hover**
 
 #### 2.2 My Events (Student) `/dashboard/events`
 - **Tabs**: Upcoming, Past, Cancelled
@@ -204,14 +223,15 @@ This is a MANDATORY section. Every page MUST include the following animation tre
 
 #### 3.3 Create Event `/dashboard/events/create`
 - **Form Sections**:
-  - **Basic Info**: Event Title, Description (textarea), Category (dropdown: Hackathon, Workshop, Seminar, Competition, Tech Talk)
-  - **Schedule**: Date (date picker), Time (time picker), Venue (text input)
-  - **Media**: Poster Image upload (drag & drop)
-  - **Registration Settings**: Registration Limit (optional number), Registration Deadline (date picker)
-  - **Promotion**: Toggle "Promote this event" (featured at top)
-  - **Custom Fields Builder**: Dynamic form where coordinator can add custom fields with title + content, ability to add/remove fields
-  - **Faculty Assignment**: Search and add faculty members to the event (by name/email)
-  - **Submit Button**: "Create Event" (orange)
+  - **Basic Info**: **Animated section transitions** (next/prev slide), Title input with **character counter animation**, Description with **auto-expand textarea**, Category dropdown with **animated option reveal**
+  - **Schedule**: Date picker with **calendar flip animation**, Time with **clock hand spin** on selection, Venue with **autocomplete dropdown animation**
+  - **Media**: **Drag & drop zone** with **bouncing upload icon**, **file progress bar animation**, **preview reveal** with fade-in
+  - **Registration Settings**: Number input with **stepper animation**, toggle switch with **smooth knob slide**
+  - **Promotion**: Toggle with **glow effect** when active, **star sparkle animation**
+  - **Custom Fields Builder**: Fields **slide-in/out** with add/remove, **reorder drag animation** (smooth layout shift)
+  - **Faculty Assignment**: **Search with debounce** and **result slide-in**, **pill tag animation** on select, **smooth remove**
+  - **Form Progress**: **Sidebar progress indicator** shows completion % with animated fill, **section validation icons** (checkmark/x animate on blur)
+  - **Submit Button**: **Loading spinner → success checkmark animation → confetti burst**, button **pulse glow** to attract attention
 
 #### 3.4 Edit Event `/dashboard/events/[id]/edit`
 - Same form as Create Event but pre-filled with existing data
@@ -317,15 +337,16 @@ This is a MANDATORY section. Every page MUST include the following animation tre
 - **Save Button**: "Add User"
 
 #### 5.6 Analytics Dashboard `/dashboard/analytics`
-- **Overview Cards**: Total Events (with % change), Total Registrations, Active Users, Departments
+- **Overview Cards**: Cards **stagger slide-up** with **count-up numbers**, % change with **animated arrow up/down**, icons **float animation**
 - **Charts**:
-  - Events per Department (bar chart)
-  - Monthly Registrations (line chart)
-  - Event Type Distribution (pie chart)
-  - Department-wise Registration (horizontal bar chart)
-- **Top Events Table**: Events with most registrations (ranked)
-- **Export Analytics**: Download analytics as PDF/Excel
-- **Date Range Selector**: Filter analytics by date range
+  - **Bar chart**: Bars **animate from bottom** with **spring physics**, color gradient fill, **hover tooltip** with smooth appear
+  - **Line chart**: Path **animated drawing** effect (stroke-dashoffset), data points **pulse on appear**
+  - **Pie chart**: **Rotating entrance** with **arc fill animation**, hover **explode slice** slightly, percentage labels **count-up**
+  - **Horizontal bar**: Bars **slide-left stagger**, labels **fade-in**, value **count-up**
+- **Chart Controls**: **Animated dropdown** for chart type toggle, **smooth transition** between chart views (morphing)
+- **Top Events Table**: Rows **slide-in stagger**, ranking number **animated badge**, **pulsing highlight** on most registered event
+- **Export Analytics**: Button with **download icon bounce animation**, **progress modal** with animated spinner on export
+- **Date Range Selector**: **Animated calendar panel**, **smooth date range highlight drag**, **preset buttons** with active state morph
 
 #### 5.7 HOI Profile `/dashboard/profile`
 - Same as profile pages
@@ -354,16 +375,18 @@ This is a MANDATORY section. Every page MUST include the following animation tre
 - **Full Modal**: Full-screen overlay for complex forms
 
 #### 6.4 Loading States
-- **Page Loader**: Centered spinner or skeleton screens
-- **Button Loader**: Spinner inside button
-- **Table Loader**: Skeleton rows
-- **Card Loader**: Pulsing placeholder cards
+- **Page Loader**: **Skeleton screens** with **shimmer animation** (gradient sweep left to right), **pulsing circles** for avatars, **animated placeholder bars** for text
+- **Button Loader**: **Spinning circle** with smooth rotation, button width **animates slightly** to accommodate spinner
+- **Table Loader**: **Skeleton rows** with **staggered shimmer** (each row starts shimmer slightly delayed), **pulsing action buttons**
+- **Card Loader**: **Pulsing border glow**, **placeholder gradient** sweeping across, **scale pulse** subtle (1.0 to 1.01)
+- **3D Loader**: **Floating 3D shape** (rotating cube/sphere) as primary loader for 3D sections, **fade-out smoothly** when content loads
 
 #### 6.5 Error States
-- **Page Error**: "Something went wrong" with retry button
-- **Form Error**: Red border on fields, error message below
-- **API Error**: Toast notification at top-right
-- **Network Offline**: Banner at top
+- **Page Error**: **Fade-in** with **slight shake** on error icon, retry button has **pulse attract animation**
+- **Form Error**: **Shake animation** on field (left-right, 3px amplitude, 3 cycles), **red border flash** transition, error message **slide-down** with fade
+- **API Error**: **Slide-in toast** from top-right with **bounce**, icon with **pulse red glow**, auto-dismiss with **shrink animation**
+- **Network Offline**: **Slide-down banner** from top with **siren-like red pulse**, reconnect auto-dismiss with **slide-up**
+- **Empty State**: Icon with **gentle float/bounce**, text **fade-in stagger**, action button **pulse glow** to encourage interaction
 
 ---
 
@@ -409,22 +432,49 @@ This is a MANDATORY section. Every page MUST include the following animation tre
 ## DESIGN REQUIREMENTS
 
 ### Marketing Pages
-- High visual impact with gradients and animations
+- High visual impact with **3D elements and animations**
 - Focus on conversion (sign up, explore events)
-- Professional, trustworthy feel
+- Professional, trustworthy feel with **premium animation polish**
+- **Every section must have at least one animation** (scroll reveal, hover effect, or 3D element)
 
 ### Dashboard Pages
-- Clean, functional, data-dense
-- Easy navigation, quick actions
-- Clear data hierarchy (stats → tables → details)
-- Consistent sidebar and header
+- Clean, functional, data-dense with **subtle animations** (not overwhelming)
+- Animated data (count-ups, progress fills, chart draws)
+- Consistent sidebar and header with **smooth transitions**
+- **Productivity-enhancing micro-interactions** (not decorative)
 
 ### Auth Pages
-- Simple, focused, minimal distractions
-- Clear call-to-action
-- Trust indicators (privacy notice, terms)
+- Simple, focused with **smooth form transitions**
+- Clear call-to-action with **attract animation** (pulse/glow)
+- **Success celebration animations** (confetti on register)
+- Trust indicators with **fade-in stagger**
+
+### Animation Philosophy
+- **Marketing pages**: Bold, impressive, wowing the visitor
+- **Dashboard pages**: Subtle, functional, not distracting
+- **Auth pages**: Smooth, reassuring, celebratory
+- **3D elements**: Use sparingly and meaningfully, not everywhere
+- **Performance**: Animations should feel 60fps smooth, respect reduced-motion
 
 ---
+
+## ANIMATION TECH STACK
+
+Use these libraries for the animations specified above:
+- **Three.js + @react-three/fiber + @react-three/drei**: All 3D elements (orb, particles, department icons, wave)
+- **Framer Motion**: All scroll/hover/page transition animations
+- **GSAP**: Complex timeline animations (scroll-triggered sequences)
+- **canvas-confetti**: Success celebration effects
+- **react-intersection-observer**: Scroll-triggered animation triggers
+- **Custom CSS**: Micro-interactions, shimmer effects, keyframe animations
+
+## 3D RENDERING SPECIFICATIONS
+
+- **Renderer**: WebGL with antialiasing, toneMapping: ACESFilmicToneMapping
+- **Camera**: PerspectiveCamera, fov: 45-60, position depending on scene
+- **Lighting**: Ambient light (0.5 intensity) + Directional light (1.0) + Point lights for glow
+- **Performance**: Use `performance.min: 0.5` on mobile, disable post-processing
+- **Fallback**: If 3D fails to load, show CSS gradient animation as graceful fallback
 
 ## OUTPUT FORMAT REQUIREMENTS
 
@@ -434,6 +484,7 @@ Generate ALL screens in Stitch with:
 3. Interactive prototypes where possible
 4. Export ready HTML/CSS or React/Tailwind code
 5. Responsive variants for mobile and desktop
+6. Animation specifications as React Three Fiber + Framer Motion code snippets
 
 ---
 
