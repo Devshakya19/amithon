@@ -1,0 +1,8 @@
+{
+  "copilot.instructionsFile": ".vscode/copilot-instructions.md",
+  "search.exclude": {
+    "**/node_modules": true,
+    "**/.next": true,
+    "**/dist": true
+  }
+}

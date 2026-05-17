@@ -185,7 +185,7 @@ export default function RegisterPage() {
                     year,
                     semester,
                   });
-                  router.push('/events');
+                  router.push('/dashboard/student');
                 } catch (err) {
                   setError(err instanceof Error ? err.message : 'Registration failed. Please try again.');
                 } finally {

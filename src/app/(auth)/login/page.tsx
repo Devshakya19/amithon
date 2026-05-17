@@ -186,11 +186,15 @@ export default function LoginPage() {
                   if (!profile || !isProfileComplete(profile)) {
                     router.push('/profile');
                   } else if (profile.role === 'student') {
-                    router.push('/events');
+                    router.push('/dashboard/student');
+                  } else if (profile.role === 'coordinator') {
+                    router.push('/dashboard/coordinator');
+                  } else if (profile.role === 'faculty') {
+                    router.push('/dashboard/faculty');
                   } else if (profile.role === 'hoi') {
-                    router.push('/dashboard/approvals');
+                    router.push('/dashboard/hoi');
                   } else {
-                    router.push('/dashboard/events');
+                    router.push('/dashboard');
                   }
                 } catch (err) {
                   console.error('Login error:', err);
