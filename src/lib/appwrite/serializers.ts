@@ -69,7 +69,7 @@ export function parseMeta(value: unknown): Record<string, unknown> | undefined {
   return Object.keys(parsed).length > 0 ? parsed : undefined;
 }
 
-export function normalizeEventDocument(document: any): EventRecord {
+export function normalizeEventDocument(document: Record<string, unknown>): EventRecord {
   return {
     ...document,
     facultyIds: Array.isArray(document.facultyIds) ? document.facultyIds : [],
@@ -77,14 +77,14 @@ export function normalizeEventDocument(document: any): EventRecord {
   } as EventRecord;
 }
 
-export function normalizeRegistrationDocument(document: any): RegistrationRecord {
+export function normalizeRegistrationDocument(document: Record<string, unknown>): RegistrationRecord {
   return {
     ...document,
     customData: parseCustomData(document.customData),
   } as RegistrationRecord;
 }
 
-export function normalizeNotificationDocument(document: any): NotificationRecord {
+export function normalizeNotificationDocument(document: Record<string, unknown>): NotificationRecord {
   return {
     ...document,
     meta: parseMeta(document.meta),

@@ -1,4 +1,4 @@
-import { ID, Query } from "appwrite";
+import { ID, Query, type Models } from "appwrite";
 import { NextResponse } from "next/server";
 import { adminDatabases } from "@/lib/appwrite/server";
 import {
@@ -8,12 +8,14 @@ import {
 } from "@/lib/appwrite/constants";
 import { requireProfileFromRequest } from "@/lib/auth/server";
 import type { EventRecord, RegistrationRecord } from "@/lib/types";
+import type { UserProfile } from "@/lib/appwrite/users";
 import { createNotification } from "@/lib/notifications";
 import {
   normalizeEventDocument,
   normalizeRegistrationDocument,
   serializeCustomData,
 } from "@/lib/appwrite/serializers";
+import { checkRateLimit } from "@/lib/rate-limit";
 
 function parseNumber(value: string | null, fallback: number) {
   if (!value) return fallback;
@@ -21,14 +23,24 @@ function parseNumber(value: string | null, fallback: number) {
   return Number.isFinite(parsed) ? parsed : fallback;
 }
 
-async function ensureEventAccess(profile: any, eventId: string) {
+function getErrorStatus(message: string) {
+  if (message === "Unauthorized") {
+    return 401;
+  }
+
+  if (message === "Forbidden") {
+    return 403;
+  }
+
+  return 500;
+}
+
+async function ensureEventAccess(profile: UserProfile, eventId: string) {
   const databaseId = getDatabaseId();
   const eventsCollectionId = getEventsCollectionId();
-  const event = normalizeEventDocument(await adminDatabases.getDocument<any>(
-    databaseId,
-    eventsCollectionId,
-    eventId
-  ));
+  const event = normalizeEventDocument(
+    await adminDatabases.getDocument<EventRecord & Models.Document>(databaseId, eventsCollectionId, eventId)
+  );
 
   const canView =
     profile.role === "hoi" ||
@@ -105,7 +117,7 @@ export async function GET(req: Request) {
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to load registrations";
-    return NextResponse.json({ error: message }, { status: 401 });
+    return NextResponse.json({ error: message }, { status: getErrorStatus(message) });
   }
 }
 
@@ -115,6 +127,15 @@ export async function POST(req: Request) {
 
     if (profile.role !== "student") {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
+    // Rate limit: 5 registrations per minute per user
+    const rate = checkRateLimit(`reg:${profile.userId}`, 5, 60_000);
+    if (!rate.allowed) {
+      return NextResponse.json(
+        { error: `Too many requests. Try again in ${rate.retryAfter}s` },
+        { status: 429, headers: { "Retry-After": String(rate.retryAfter ?? 60) } }
+      );
     }
 
     const body = (await req.json()) as {
@@ -132,11 +153,9 @@ export async function POST(req: Request) {
     const eventsCollectionId = getEventsCollectionId();
     const registrationsCollectionId = getRegistrationsCollectionId();
 
-    const event = normalizeEventDocument(await adminDatabases.getDocument<any>(
-      databaseId,
-      eventsCollectionId,
-      eventId
-    ));
+    const event = normalizeEventDocument(
+      await adminDatabases.getDocument<EventRecord & Models.Document>(databaseId, eventsCollectionId, eventId)
+    );
 
     if (event.status !== "published") {
       return NextResponse.json({ error: "Event is not open" }, { status: 400 });
@@ -149,7 +168,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Event is full" }, { status: 400 });
     }
 
-    const existing = await adminDatabases.listDocuments<any>(
+    const existing = await adminDatabases.listDocuments<RegistrationRecord & Models.Document>(
       databaseId,
       registrationsCollectionId,
       [
@@ -164,7 +183,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Already registered" }, { status: 409 });
     }
 
-    const registration = await adminDatabases.createDocument<any>(
+    const registration = await adminDatabases.createDocument<RegistrationRecord & Models.Document>(
       databaseId,
       registrationsCollectionId,
       ID.unique(),
@@ -183,7 +202,7 @@ export async function POST(req: Request) {
       }
     );
 
-    await adminDatabases.updateDocument<any>(
+    await adminDatabases.updateDocument<EventRecord & Models.Document>(
       databaseId,
       eventsCollectionId,
       eventId,
@@ -214,6 +233,6 @@ export async function POST(req: Request) {
     return NextResponse.json({ data: normalizeRegistrationDocument(registration) });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Registration failed";
-    return NextResponse.json({ error: message }, { status: 401 });
+    return NextResponse.json({ error: message }, { status: getErrorStatus(message) });
   }
 }

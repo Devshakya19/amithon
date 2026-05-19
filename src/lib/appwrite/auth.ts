@@ -4,52 +4,90 @@ import { ID, OAuthProvider } from "appwrite";
 import { account } from "@/lib/appwrite/client";
 import { createOrUpdateUserProfile } from "@/lib/appwrite/users";
 
+function safeRedirectUrl(value: string | undefined, fallback: string) {
+  if (!value) {
+    return fallback;
+  }
+
+  try {
+    const url = new URL(value);
+    if (typeof window !== "undefined" && url.origin !== window.location.origin) {
+      return fallback;
+    }
+
+    return url.toString();
+  } catch {
+    return fallback;
+  }
+}
+
 function getOAuthUrls() {
   if (typeof window === "undefined") {
     return { successUrl: "", failureUrl: "" };
   }
 
   const origin = window.location.origin;
-  const successUrl =
-    process.env.NEXT_PUBLIC_APPWRITE_OAUTH_SUCCESS_URL ?? `${origin}/`;
-  const failureUrl =
-    process.env.NEXT_PUBLIC_APPWRITE_OAUTH_FAILURE_URL ?? `${origin}/login?error=oauth`;
+  const successUrl = safeRedirectUrl(
+    process.env.NEXT_PUBLIC_APPWRITE_OAUTH_SUCCESS_URL,
+    `${origin}/`
+  );
+  const failureUrl = safeRedirectUrl(
+    process.env.NEXT_PUBLIC_APPWRITE_OAUTH_FAILURE_URL,
+    `${origin}/login?error=oauth`
+  );
 
   return { successUrl, failureUrl };
+}
+
+type AppwriteSessionError = {
+  message?: string;
+};
+
+function getErrorMessage(error: unknown) {
+  if (typeof error === "object" && error !== null && "message" in error) {
+    return String((error as AppwriteSessionError).message ?? "");
+  }
+
+  return "";
+}
+
+function isSessionConflict(message: string) {
+  return message.includes("Creation of a session is prohibited") || message.includes("session is active");
+}
+
+function isRateLimit(message: string) {
+  return message.toLowerCase().includes("rate limit");
 }
 
 export async function loginWithEmail(email: string, password: string) {
   const maxRetries = 3;
   let attempt = 0;
-  let lastError: any = null;
+  let lastError: unknown = null;
 
   while (attempt < maxRetries) {
     try {
       return await account.createEmailPasswordSession(email, password);
-    } catch (err) {
-      lastError = err;
-      const msg = (err && (err as any).message) || '';
+    } catch (error) {
+      lastError = error;
+      const message = getErrorMessage(error);
 
-      // Handle active-session case by deleting current session and retrying immediately
-      if (msg.includes('Creation of a session is prohibited') || msg.includes('session is active')) {
+      if (isSessionConflict(message)) {
         try {
-          await account.deleteSession('current');
-          // retry once immediately
+          await account.deleteSession("current");
           return await account.createEmailPasswordSession(email, password);
-        } catch (retryErr) {
-          throw retryErr;
+        } catch (retryError) {
+          throw retryError;
         }
       }
 
-      // Handle rate limit: exponential backoff
-      if (msg.toLowerCase().includes('rate limit')) {
-        attempt++;
+      if (isRateLimit(message)) {
+        attempt += 1;
         const delay = Math.min(5000, 500 * Math.pow(2, attempt));
-        await new Promise((res) => setTimeout(res, delay));
-        continue; // retry
+        await new Promise((resolve) => setTimeout(resolve, delay));
+        continue;
       }
 
-      throw err;
+      throw error;
     }
   }
 
@@ -67,37 +105,52 @@ export async function registerWithEmail(params: {
 }) {
   const { email, password, name, studentId, department, year, semester } = params;
 
-  // Create account
+  // Basic password strength enforcement
+  if (typeof password !== "string" || password.length < 8) {
+    throw new Error("Password must be at least 8 characters long");
+  }
+
+  if (!/[A-Z]/.test(password)) {
+    throw new Error("Password must contain at least one uppercase letter");
+  }
+
+  if (!/[a-z]/.test(password)) {
+    throw new Error("Password must contain at least one lowercase letter");
+  }
+
+  if (!/[0-9]/.test(password)) {
+    throw new Error("Password must contain at least one number");
+  }
+
   await account.create(ID.unique(), email, password, name);
 
-  // Create session
-  // Create session with retry/backoff on rate limit
   const maxRetries = 3;
   let attempt = 0;
   while (attempt < maxRetries) {
     try {
       await account.createEmailPasswordSession(email, password);
       break;
-    } catch (err) {
-      const msg = (err && (err as any).message) || '';
-      if (msg.includes('Creation of a session is prohibited') || msg.includes('session is active')) {
+    } catch (error) {
+      const message = getErrorMessage(error);
+
+      if (isSessionConflict(message)) {
         try {
-          await account.deleteSession('current');
+          await account.deleteSession("current");
           await account.createEmailPasswordSession(email, password);
           break;
-        } catch (retryErr) {
-          throw retryErr;
+        } catch (retryError) {
+          throw retryError;
         }
       }
 
-      if (msg.toLowerCase().includes('rate limit')) {
-        attempt++;
+      if (isRateLimit(message)) {
+        attempt += 1;
         const delay = Math.min(5000, 500 * Math.pow(2, attempt));
-        await new Promise((res) => setTimeout(res, delay));
+        await new Promise((resolve) => setTimeout(resolve, delay));
         continue;
       }
 
-      throw err;
+      throw error;
     }
   }
 

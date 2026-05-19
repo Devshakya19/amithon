@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { type Models } from "appwrite";
 import { adminDatabases } from "@/lib/appwrite/server";
 import {
   getDatabaseId,
@@ -13,6 +14,13 @@ import {
   requireProfileFromRequest,
 } from "@/lib/auth/server";
 import type { EventRecord, EventStatus } from "@/lib/types";
+
+function getErrorStatus(message: string) {
+  if (message === "Unauthorized") return 401;
+  if (message === "Forbidden") return 403;
+  if (message === "Not found") return 404;
+  return 500;
+}
 
 function toString(value: unknown) {
   if (typeof value !== "string") {
@@ -29,11 +37,9 @@ export async function GET(
   const { id } = await params;
   const databaseId = getDatabaseId();
   const eventsCollectionId = getEventsCollectionId();
-  const event = normalizeEventDocument(await adminDatabases.getDocument<any>(
-    databaseId,
-    eventsCollectionId,
-    id
-  ));
+  const event = normalizeEventDocument(
+    await adminDatabases.getDocument<Models.Document>(databaseId, eventsCollectionId, id)
+  );
 
   if (event.status === "published") {
     return NextResponse.json({ data: event });

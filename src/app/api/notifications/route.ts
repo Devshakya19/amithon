@@ -1,9 +1,16 @@
 import { NextResponse } from "next/server";
-import { Query } from "appwrite";
+import { Query, type Models } from "appwrite";
 import { adminDatabases } from "@/lib/appwrite/server";
 import { getDatabaseId, getNotificationsCollectionId } from "@/lib/appwrite/constants";
 import { requireProfileFromRequest } from "@/lib/auth/server";
 import { normalizeNotificationDocument } from "@/lib/appwrite/serializers";
+import type { NotificationRecord } from "@/lib/types";
+
+function getErrorStatus(message: string) {
+  if (message === "Unauthorized") return 401;
+  if (message === "Forbidden") return 403;
+  return 500;
+}
 
 export async function GET(req: Request) {
   try {
@@ -25,7 +32,7 @@ export async function GET(req: Request) {
       queries.push(Query.equal("isRead", false));
     }
 
-    const notifications = await adminDatabases.listDocuments<any>(
+    const notifications = await adminDatabases.listDocuments<NotificationRecord & Models.Document>(
       databaseId,
       notificationsCollectionId,
       queries
@@ -37,6 +44,6 @@ export async function GET(req: Request) {
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to load notifications";
-    return NextResponse.json({ error: message }, { status: 401 });
+    return NextResponse.json({ error: message }, { status: getErrorStatus(message) });
   }
 }

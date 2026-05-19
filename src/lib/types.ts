@@ -18,7 +18,7 @@ export type EventRecord = {
   posterFileId?: string;
   registrationLimit?: number;
   registrationCount?: number;
-  customFields?: EventCustomField[];
+  customFields?: EventCustomField[] | string;
   status: EventStatus;
   promoted?: boolean;
   createdAt: string;
@@ -35,7 +35,7 @@ export type RegistrationRecord = {
   department?: string;
   year?: string;
   semester?: string;
-  customData?: Record<string, string>;
+  customData?: Record<string, string> | string;
   status: "registered" | "cancelled";
   createdAt: string;
 };
@@ -47,7 +47,7 @@ export type NotificationRecord = {
   body: string;
   type: string;
   isRead: boolean;
-  meta?: Record<string, unknown>;
+  meta?: Record<string, unknown> | string;
   createdAt: string;
 };
 

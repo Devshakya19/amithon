@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { type Models } from "appwrite";
 import { adminDatabases } from "@/lib/appwrite/server";
 import {
   getDatabaseId,
@@ -6,6 +7,14 @@ import {
   getRegistrationsCollectionId,
 } from "@/lib/appwrite/constants";
 import { requireProfileFromRequest } from "@/lib/auth/server";
+import type { EventRecord, RegistrationRecord } from "@/lib/types";
+
+function getErrorStatus(message: string) {
+  if (message === "Unauthorized") return 401;
+  if (message === "Forbidden") return 403;
+  if (message === "Not found") return 404;
+  return 500;
+}
 
 export async function PATCH(
   req: Request,

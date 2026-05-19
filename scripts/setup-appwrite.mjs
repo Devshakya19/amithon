@@ -239,33 +239,34 @@ async function ensureIndex(collectionId, key, type, attributes, extra = {}) {
   await waitForIndex(collectionId, key);
 }
 
-async function ensureBucket(bucketId, name, maximumFileSize, allowedFileExtensions, fileSecurity = false) {
+async function ensureBucket(
+  bucketId,
+  name,
+  maximumFileSize,
+  allowedFileExtensions,
+  fileSecurity = true
+) {
+  // Secure defaults: no public read, per-file security, encryption and antivirus enabled
+  const safePayload = {
+    name,
+    permissions: [], // no public read
+    fileSecurity,
+    enabled: true,
+    maximumFileSize,
+    allowedFileExtensions,
+    compression: "none",
+    encryption: true,
+    antivirus: true,
+  };
+
   try {
     await request("GET", `/storage/buckets/${bucketId}`, null, [200]);
-    await request("PUT", `/storage/buckets/${bucketId}`, {
-      name,
-      permissions: ["read(\"any\")"],
-      fileSecurity,
-      enabled: true,
-      maximumFileSize,
-      allowedFileExtensions,
-      compression: "none",
-      encryption: false,
-      antivirus: false,
-    });
+    await request("PUT", `/storage/buckets/${bucketId}`, safePayload);
     console.log(`Bucket exists: ${bucketId}`);
   } catch {
     await request("POST", "/storage/buckets", {
       bucketId,
-      name,
-      permissions: ["read(\"any\")"],
-      fileSecurity,
-      enabled: true,
-      maximumFileSize,
-      allowedFileExtensions,
-      compression: "none",
-      encryption: false,
-      antivirus: false,
+      ...safePayload,
     });
     console.log(`Created bucket: ${bucketId}`);
   }
@@ -450,8 +451,8 @@ async function main() {
   await ensureIndex(collectionIds.certificates, "cert_evt_idx", "key", ["eventId"]);
   await ensureIndex(collectionIds.certificates, "cert_user_idx", "key", ["userId"]);
 
-  await ensureBucket(bucketIds.posters, "Posters", 5 * 1024 * 1024, ["jpg", "jpeg", "png", "webp"], false);
-  await ensureBucket(bucketIds.certificates, "Certificates", 10 * 1024 * 1024, ["pdf"], false);
+  await ensureBucket(bucketIds.posters, "Posters", 5 * 1024 * 1024, ["jpg", "jpeg", "png", "webp"], true);
+  await ensureBucket(bucketIds.certificates, "Certificates", 10 * 1024 * 1024, ["pdf"], true);
 
   const nextEnv = [
     ["APPWRITE_ENDPOINT", env.APPWRITE_ENDPOINT || endpoint],

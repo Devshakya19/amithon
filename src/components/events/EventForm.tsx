@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { parseEventCustomFields } from "@/lib/appwrite/serializers";
 import { useRouter } from "next/navigation";
 import { ID } from "appwrite";
 import { departments } from "@/lib/departments";
@@ -26,7 +27,9 @@ export default function EventForm({ initial = null, eventId }: EventFormProps) {
   const [dateStart, setDateStart] = useState(initial?.dateStart ?? "");
   const [dateEnd, setDateEnd] = useState(initial?.dateEnd ?? "");
   const [registrationLimit, setRegistrationLimit] = useState(initial?.registrationLimit ?? 0);
-  const [customFields, setCustomFields] = useState<EventCustomField[]>(initial?.customFields ?? []);
+  const [customFields, setCustomFields] = useState<EventCustomField[]>(() =>
+    parseEventCustomFields(initial?.customFields)
+  );
   const [posterFileId, setPosterFileId] = useState(initial?.posterFileId ?? "");
   const [posterFile, setPosterFile] = useState<File | null>(null);
 
@@ -66,7 +69,7 @@ export default function EventForm({ initial = null, eventId }: EventFormProps) {
     setDateStart(toLocalInputValue(initial.dateStart));
     setDateEnd(toLocalInputValue(initial.dateEnd));
     setRegistrationLimit(initial.registrationLimit ?? 0);
-    setCustomFields(initial.customFields ?? []);
+    setCustomFields(parseEventCustomFields(initial.customFields));
     setPosterFileId(initial.posterFileId ?? "");
   }, [initial]);
 
@@ -94,12 +97,21 @@ export default function EventForm({ initial = null, eventId }: EventFormProps) {
           let nextPosterId = posterFileId;
 
           if (posterFile) {
-            const upload = await storage.createFile(
-              getPostersBucketId(),
-              ID.unique(),
-              posterFile
-            );
-            nextPosterId = upload.$id;
+            // Upload poster to server-side endpoint which validates and stores securely
+            const form = new FormData();
+            form.append("file", posterFile);
+
+            const resp = await fetch("/api/uploads/poster", {
+              method: "POST",
+              body: form,
+            });
+
+            if (!resp.ok) {
+              throw new Error(await resp.text());
+            }
+
+            const json = await resp.json();
+            nextPosterId = json.fileId;
           }
 
           const payload = {

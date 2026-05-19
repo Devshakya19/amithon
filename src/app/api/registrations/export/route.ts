@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { Query } from "appwrite";
+import { Query, type Models } from "appwrite";
 import { adminDatabases } from "@/lib/appwrite/server";
 import {
   getDatabaseId,
@@ -7,8 +7,14 @@ import {
   getRegistrationsCollectionId,
 } from "@/lib/appwrite/constants";
 import { requireProfileFromRequest } from "@/lib/auth/server";
-import type { RegistrationRecord } from "@/lib/types";
+import type { EventRecord, RegistrationRecord } from "@/lib/types";
 import { normalizeEventDocument, normalizeRegistrationDocument } from "@/lib/appwrite/serializers";
+
+function getErrorStatus(message: string) {
+  if (message === "Unauthorized") return 401;
+  if (message === "Forbidden") return 403;
+  return 500;
+}
 
 function csvEscape(value: string) {
   if (value.includes("\"")) {
@@ -36,11 +42,13 @@ export async function GET(req: Request) {
     const eventsCollectionId = getEventsCollectionId();
     const registrationsCollectionId = getRegistrationsCollectionId();
 
-    const event = normalizeEventDocument(await adminDatabases.getDocument<any>(
-      databaseId,
-      eventsCollectionId,
-      eventId
-    ));
+    const event = normalizeEventDocument(
+      await adminDatabases.getDocument<EventRecord & Models.Document>(
+        databaseId,
+        eventsCollectionId,
+        eventId
+      )
+    );
 
     const canView =
       profile.role === "hoi" ||
@@ -51,7 +59,7 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    const registrations = await adminDatabases.listDocuments<any>(
+    const registrations = await adminDatabases.listDocuments<RegistrationRecord & Models.Document>(
       databaseId,
       registrationsCollectionId,
       [Query.equal("eventId", eventId), Query.limit(500)]
@@ -99,6 +107,6 @@ export async function GET(req: Request) {
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Export failed";
-    return NextResponse.json({ error: message }, { status: 401 });
+    return NextResponse.json({ error: message }, { status: getErrorStatus(message) });
   }
 }

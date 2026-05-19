@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { type Models } from "appwrite";
 import { adminDatabases } from "@/lib/appwrite/server";
 import {
   getDatabaseId,
@@ -8,6 +9,13 @@ import { requireProfileFromRequest } from "@/lib/auth/server";
 import type { EventRecord } from "@/lib/types";
 import { createNotification } from "@/lib/notifications";
 import { normalizeEventDocument } from "@/lib/appwrite/serializers";
+
+function getErrorStatus(message: string) {
+  if (message === "Unauthorized") return 401;
+  if (message === "Forbidden") return 403;
+  if (message === "Not found") return 404;
+  return 500;
+}
 
 export async function POST(
   req: Request,

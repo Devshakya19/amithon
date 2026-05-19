@@ -20,9 +20,11 @@ import {
 } from 'lucide-react';
 import { loginWithEmail, loginWithGoogle } from '@/lib/appwrite/auth';
 import { ensureCurrentUserProfile, isProfileComplete } from '@/lib/appwrite/users';
+import { useUser } from '@/context/UserProvider';
 
 export default function LoginPage() {
   const router = useRouter();
+  const { refresh } = useUser();
   const [showPassword, setShowPassword] = useState(false);
   const [cooldownUntil, setCooldownUntil] = useState<number | null>(null);
   const [email, setEmail] = useState('');
@@ -181,6 +183,13 @@ export default function LoginPage() {
                     const msg = profileErr instanceof Error ? profileErr.message : 'Failed to initialize user profile.';
                     setError(msg);
                     return;
+                  }
+
+                  // Refresh the global user context so protected pages render immediately
+                  try {
+                    await refresh();
+                  } catch (refreshErr) {
+                    console.warn('User context refresh failed after login:', refreshErr);
                   }
 
                   if (!profile || !isProfileComplete(profile)) {

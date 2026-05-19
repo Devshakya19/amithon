@@ -1,4 +1,4 @@
-import { ID, Query } from "appwrite";
+import { ID, Query, type Models } from "appwrite";
 import { NextResponse } from "next/server";
 import { adminDatabases } from "@/lib/appwrite/server";
 import {
@@ -33,8 +33,9 @@ function parseCustomFields(value: unknown): EventCustomField[] {
   for (const item of value) {
     if (!item || typeof item !== "object") continue;
 
-    const label = toString((item as any).label);
-    const required = Boolean((item as any).required);
+    const field = item as Record<string, unknown>;
+    const label = toString(field.label);
+    const required = Boolean(field.required);
 
     if (!label) continue;
 
@@ -45,64 +46,72 @@ function parseCustomFields(value: unknown): EventCustomField[] {
 }
 
 export async function GET(req: Request) {
-  const { searchParams } = new URL(req.url);
-  const scope = searchParams.get("scope") ?? "public";
-  const status = searchParams.get("status") as EventStatus | null;
-  const deptId = searchParams.get("deptId");
-  const query = searchParams.get("query");
-  const promoted = searchParams.get("promoted");
-  const limit = Number(searchParams.get("limit") ?? 50);
-  const offset = Number(searchParams.get("offset") ?? 0);
+  try {
+    const { searchParams } = new URL(req.url);
+    const scope = searchParams.get("scope") ?? "public";
+    const rawStatus = searchParams.get("status");
+    const status = rawStatus && ["draft", "pending", "published", "completed", "cancelled"].includes(rawStatus)
+      ? (rawStatus as EventStatus)
+      : null;
+    const deptId = searchParams.get("deptId");
+    const query = searchParams.get("query");
+    const promoted = searchParams.get("promoted");
+    const limit = Number(searchParams.get("limit") ?? 50);
+    const offset = Number(searchParams.get("offset") ?? 0);
 
-  const databaseId = getDatabaseId();
-  const eventsCollectionId = getEventsCollectionId();
-  const profile = await getOptionalProfileFromRequest(req);
-  const queries = [] as string[];
+    const databaseId = getDatabaseId();
+    const eventsCollectionId = getEventsCollectionId();
+    const profile = await getOptionalProfileFromRequest(req);
+    const queries = [] as string[];
 
-  if (!profile || scope === "public") {
-    queries.push(Query.equal("status", "published"));
-  } else if (scope === "mine") {
-    if (profile.role === "coordinator") {
-      queries.push(Query.equal("coordinatorId", profile.userId));
-    } else if (profile.role === "faculty") {
-      queries.push(Query.contains("facultyIds", profile.userId));
+    if (!profile || scope === "public") {
+      queries.push(Query.equal("status", "published"));
+    } else if (scope === "mine") {
+      if (profile.role === "coordinator") {
+        queries.push(Query.equal("coordinatorId", profile.userId));
+      } else if (profile.role === "faculty") {
+        queries.push(Query.contains("facultyIds", profile.userId));
+      }
     }
+
+    if (status) {
+      queries.push(Query.equal("status", status));
+    }
+
+    if (deptId) {
+      queries.push(Query.equal("deptId", deptId));
+    }
+
+    if (query) {
+      queries.push(Query.search("title", query));
+    }
+
+    if (promoted === "true") {
+      queries.push(Query.equal("promoted", true));
+    }
+
+    if (Number.isFinite(limit)) {
+      queries.push(Query.limit(Math.max(1, Math.min(limit, 100))));
+    }
+
+    if (Number.isFinite(offset)) {
+      queries.push(Query.offset(Math.max(0, offset)));
+    }
+
+    const events = await adminDatabases.listDocuments<EventRecord & Models.Document>(
+      databaseId,
+      eventsCollectionId,
+      queries
+    );
+
+    return NextResponse.json({
+      data: events.documents.map((document) => normalizeEventDocument(document)),
+      total: events.total,
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Failed to load events";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
-
-  if (status) {
-    queries.push(Query.equal("status", status));
-  }
-
-  if (deptId) {
-    queries.push(Query.equal("deptId", deptId));
-  }
-
-  if (query) {
-    queries.push(Query.search("title", query));
-  }
-
-  if (promoted === "true") {
-    queries.push(Query.equal("promoted", true));
-  }
-
-  if (Number.isFinite(limit)) {
-    queries.push(Query.limit(limit));
-  }
-
-  if (Number.isFinite(offset)) {
-    queries.push(Query.offset(offset));
-  }
-
-    const events = await adminDatabases.listDocuments<any>(
-    databaseId,
-    eventsCollectionId,
-    queries
-  );
-
-  return NextResponse.json({
-    data: events.documents.map((document) => normalizeEventDocument(document)),
-    total: events.total,
-  });
 }
 
 export async function POST(req: Request) {
@@ -156,7 +165,7 @@ export async function POST(req: Request) {
     const databaseId = getDatabaseId();
     const eventsCollectionId = getEventsCollectionId();
 
-    const event = await adminDatabases.createDocument<any>(
+    const event = await adminDatabases.createDocument<EventRecord & Models.Document>(
       databaseId,
       eventsCollectionId,
       ID.unique(),
@@ -173,7 +182,9 @@ export async function POST(req: Request) {
         promoted: Boolean(body.promoted),
         status,
         coordinatorId: profile.userId,
-        facultyIds: Array.isArray(body.facultyIds) ? body.facultyIds : [],
+        facultyIds: Array.isArray(body.facultyIds)
+          ? body.facultyIds.filter((facultyId): facultyId is string => typeof facultyId === "string").map(toString).filter(Boolean)
+          : [],
         createdAt: now,
       }
     );
@@ -181,6 +192,6 @@ export async function POST(req: Request) {
     return NextResponse.json({ data: normalizeEventDocument(event) });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to create event";
-    return NextResponse.json({ error: message }, { status: 401 });
+    return NextResponse.json({ error: message }, { status: message === "Unauthorized" ? 401 : 500 });
   }
 }

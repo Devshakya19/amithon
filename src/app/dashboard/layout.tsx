@@ -2,7 +2,7 @@
 
 import type { ReactNode } from "react";
 import { AuthGate } from "@/components/auth/AuthGate";
-import DashboardShell from "@/components/dashboard/DashboardShell";
+import Navbar from "@/components/layout/Navbar";
 
 export default function DashboardLayout({ children }: { children: ReactNode }) {
   return (
@@ -13,7 +13,10 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
         </div>
       }
     >
-      <DashboardShell>{children}</DashboardShell>
+      <div className="min-h-screen bg-background text-on-surface">
+        <Navbar />
+        <main className="pt-28 pb-16">{children}</main>
+      </div>
     </AuthGate>
   );
 }

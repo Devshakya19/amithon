@@ -78,17 +78,15 @@ export default function EventManagePage() {
     }
 
     try {
-      const upload = await storage.createFile(
-        getCertificatesBucketId(),
-        ID.unique(),
-        certificateFile
-      );
+      const form = new FormData();
+      form.append("file", certificateFile);
+      form.append("eventId", eventId);
+      form.append("userId", certificateUserId);
 
-      await apiPost("/api/certificates", {
-        eventId,
-        userId: certificateUserId,
-        fileId: upload.$id,
-      });
+      const resp = await fetch("/api/certificates", { method: "POST", body: form });
+      if (!resp.ok) {
+        throw new Error(await resp.text());
+      }
 
       setCertificateMessage("Certificate issued.");
       setCertificateFile(null);

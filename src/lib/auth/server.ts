@@ -1,4 +1,4 @@
-import { Account, Client } from "appwrite";
+import { Account, Client, type Models } from "appwrite";
 import { adminDatabases } from "@/lib/appwrite/server";
 import { getPublicConfig } from "@/lib/appwrite/serverConfig";
 import { getDatabaseId, getUsersCollectionId } from "@/lib/appwrite/constants";
@@ -27,7 +27,9 @@ async function getUserFromJwt(jwt: string) {
   }
 }
 
-export async function getOptionalProfileFromRequest(req: Request) {
+export async function getOptionalProfileFromRequest(
+  req: Request
+): Promise<UserProfile | null> {
   const jwt = getJwtFromRequest(req);
   const user = await getUserFromJwt(jwt);
 
@@ -38,10 +40,10 @@ export async function getOptionalProfileFromRequest(req: Request) {
   const databaseId = getDatabaseId();
   const usersCollectionId = getUsersCollectionId();
 
-  return adminDatabases.getDocument<any>(databaseId, usersCollectionId, user.$id);
+  return adminDatabases.getDocument<UserProfile & Models.Document>(databaseId, usersCollectionId, user.$id);
 }
 
-export async function requireProfileFromRequest(req: Request) {
+export async function requireProfileFromRequest(req: Request): Promise<UserProfile> {
   const profile = await getOptionalProfileFromRequest(req);
 
   if (!profile) {

@@ -19,10 +19,12 @@ import {
   ChevronRight
 } from 'lucide-react';
 import { loginWithGoogle, registerWithEmail } from '@/lib/appwrite/auth';
+import { useUser } from '@/context/UserProvider';
 import { departments, years } from '@/lib/departments';
 
 export default function RegisterPage() {
   const router = useRouter();
+  const { refresh } = useUser();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [fullName, setFullName] = useState('');
@@ -185,6 +187,14 @@ export default function RegisterPage() {
                     year,
                     semester,
                   });
+
+                  // Refresh global user context so the dashboard renders immediately
+                  try {
+                    await refresh();
+                  } catch (refreshErr) {
+                    console.warn('User context refresh failed after registration:', refreshErr);
+                  }
+
                   router.push('/dashboard/student');
                 } catch (err) {
                   setError(err instanceof Error ? err.message : 'Registration failed. Please try again.');

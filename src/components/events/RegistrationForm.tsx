@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { parseEventCustomFields } from "@/lib/appwrite/serializers";
 import Link from "next/link";
 import { useUser } from "@/context/UserProvider";
 import { apiPost } from "@/lib/api";
@@ -13,7 +14,7 @@ export default function RegistrationForm({ event }: { event: EventRecord }) {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
-  const fields = useMemo(() => event.customFields ?? [], [event.customFields]);
+  const fields = useMemo(() => parseEventCustomFields(event.customFields), [event.customFields]);
 
   if (isLoading) {
     return <div className="text-on-surface-variant">Loading session...</div>;

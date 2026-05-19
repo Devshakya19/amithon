@@ -1,10 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
+import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { Menu, X, Rocket } from "lucide-react";
+import { Menu, X, Rocket, UserCircle } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useUser } from "@/context/UserProvider";
+import type { UserRole } from "@/lib/appwrite/users";
 
 const navLinks = [
   { name: "Home", href: "/" },
@@ -13,9 +16,48 @@ const navLinks = [
   { name: "Contact", href: "#contact" },
 ];
 
+const roleNavMap: Record<UserRole, { name: string; href: string }[]> = {
+  student: [
+    { name: "Dashboard", href: "/dashboard/student" },
+    { name: "My Events", href: "/dashboard/my-events" },
+    { name: "Notifications", href: "/dashboard/notifications" },
+    { name: "Certificates", href: "/dashboard/certificates" },
+  ],
+  coordinator: [
+    { name: "Dashboard", href: "/dashboard/coordinator" },
+    { name: "Events", href: "/dashboard/events" },
+    { name: "Notifications", href: "/dashboard/notifications" },
+  ],
+  faculty: [
+    { name: "Dashboard", href: "/dashboard/faculty" },
+    { name: "Events", href: "/dashboard/events" },
+    { name: "Notifications", href: "/dashboard/notifications" },
+  ],
+  hoi: [
+    { name: "Dashboard", href: "/dashboard/hoi" },
+    { name: "Approvals", href: "/dashboard/approvals" },
+    { name: "Events", href: "/dashboard/events" },
+    { name: "Users", href: "/dashboard/users" },
+  ],
+};
+
 export default function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const pathname = usePathname();
+  const router = useRouter();
+  const { profile, isLoading, signOut } = useUser();
+  const isDashboard = pathname?.startsWith("/dashboard");
+
+  const roleLinks = useMemo(() => {
+    if (!profile?.role) {
+      return [];
+    }
+
+    return roleNavMap[profile.role] ?? [];
+  }, [profile?.role]);
+
+  const displayName = profile?.fullName || profile?.email || "Account";
 
   useEffect(() => {
     const handleScroll = () => {
@@ -49,7 +91,7 @@ export default function Navbar() {
 
         {/* Desktop Nav */}
         <div className="hidden md:flex items-center gap-8">
-          {navLinks.map((link) => (
+          {(isDashboard ? roleLinks : navLinks).map((link) => (
             <Link
               key={link.name}
               href={link.href}
@@ -61,18 +103,47 @@ export default function Navbar() {
         </div>
 
         <div className="hidden md:flex items-center gap-6">
-          <Link
-            href="/login"
-            className="text-[11px] font-semibold uppercase tracking-[0.35em] text-white hover:text-primary-container transition-colors"
-          >
-            Sign In
-          </Link>
-          <Link
-            href="/register"
-            className="px-6 py-2.5 rounded-xl bg-primary-container text-white text-[11px] font-semibold uppercase tracking-[0.35em] hover:scale-105 active:scale-95 transition-all shadow-[0_0_20px_rgba(37,99,235,0.2)]"
-          >
-            Join Portal
-          </Link>
+          {isLoading ? null : isDashboard ? (
+            <div className="flex items-center gap-4">
+              <Link href="/profile" className="flex items-center gap-2 text-white">
+                <UserCircle className="w-5 h-5" />
+                <span className="max-w-[160px] truncate text-[11px] font-semibold uppercase tracking-[0.25em]">
+                  {displayName}
+                </span>
+              </Link>
+              <button
+                className="px-4 py-2 rounded-xl border border-white/10 text-[11px] font-semibold uppercase tracking-[0.35em] text-white/70 hover:text-white hover:border-white/30 transition-all"
+                onClick={async () => {
+                  await signOut();
+                  router.push("/");
+                }}
+              >
+                Sign Out
+              </button>
+            </div>
+          ) : profile ? (
+            <Link href="/profile" className="flex items-center gap-2 text-white">
+              <UserCircle className="w-5 h-5" />
+              <span className="max-w-[160px] truncate text-[11px] font-semibold uppercase tracking-[0.25em]">
+                {displayName}
+              </span>
+            </Link>
+          ) : (
+            <>
+              <Link
+                href="/login"
+                className="text-[11px] font-semibold uppercase tracking-[0.35em] text-white hover:text-primary-container transition-colors"
+              >
+                Sign In
+              </Link>
+              <Link
+                href="/register"
+                className="px-6 py-2.5 rounded-xl bg-primary-container text-white text-[11px] font-semibold uppercase tracking-[0.35em] hover:scale-105 active:scale-95 transition-all shadow-[0_0_20px_rgba(37,99,235,0.2)]"
+              >
+                Join Portal
+              </Link>
+            </>
+          )}
         </div>
 
         {/* Mobile Toggle */}
@@ -93,7 +164,7 @@ export default function Navbar() {
             exit={{ opacity: 0, y: -20 }}
             className="absolute top-24 left-6 right-6 glass-card p-8 rounded-[2.5rem] flex flex-col gap-6 md:hidden border-white/10"
           >
-            {navLinks.map((link) => (
+            {(isDashboard ? roleLinks : navLinks).map((link) => (
               <Link
                 key={link.name}
                 href={link.href}
@@ -104,20 +175,54 @@ export default function Navbar() {
               </Link>
             ))}
             <hr className="border-white/5" />
-            <Link
-              href="/login"
-              className="text-lg font-semibold text-white uppercase tracking-widest"
-              onClick={() => setIsMobileMenuOpen(false)}
-            >
-              Sign In
-            </Link>
-            <Link
-              href="/register"
-              className="w-full py-4 rounded-2xl bg-primary-container text-white font-semibold text-center uppercase tracking-widest"
-              onClick={() => setIsMobileMenuOpen(false)}
-            >
-              Join Portal
-            </Link>
+            {isLoading ? null : isDashboard ? (
+              <>
+                <Link
+                  href="/profile"
+                  className="text-lg font-semibold text-white uppercase tracking-widest flex items-center gap-2"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  <UserCircle className="w-5 h-5" />
+                  <span className="max-w-[200px] truncate">{displayName}</span>
+                </Link>
+                <button
+                  className="w-full py-4 rounded-2xl border border-white/10 text-white font-semibold text-center uppercase tracking-widest"
+                  onClick={async () => {
+                    await signOut();
+                    setIsMobileMenuOpen(false);
+                    router.push("/");
+                  }}
+                >
+                  Sign Out
+                </button>
+              </>
+            ) : profile ? (
+              <Link
+                href="/profile"
+                className="text-lg font-semibold text-white uppercase tracking-widest flex items-center gap-2"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                <UserCircle className="w-5 h-5" />
+                <span className="max-w-[200px] truncate">{displayName}</span>
+              </Link>
+            ) : (
+              <>
+                <Link
+                  href="/login"
+                  className="text-lg font-semibold text-white uppercase tracking-widest"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  Sign In
+                </Link>
+                <Link
+                  href="/register"
+                  className="w-full py-4 rounded-2xl bg-primary-container text-white font-semibold text-center uppercase tracking-widest"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  Join Portal
+                </Link>
+              </>
+            )}
           </motion.div>
         )}
       </AnimatePresence>

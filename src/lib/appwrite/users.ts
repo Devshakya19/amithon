@@ -1,6 +1,6 @@
 "use client";
 
-import { ID, Permission, Role } from "appwrite";
+import { ID, Permission, Role, type Models } from "appwrite";
 import { account, databases } from "@/lib/appwrite/client";
 import { getDatabaseId, getUsersCollectionId } from "@/lib/appwrite/constants";
 
@@ -24,13 +24,14 @@ export async function getCurrentUserProfile() {
   const databaseId = getDatabaseId();
   const usersCollectionId = getUsersCollectionId();
 
-  return databases.getDocument<any>(databaseId, usersCollectionId, user.$id);
+  return databases.getDocument<UserProfile & Models.Document>(databaseId, usersCollectionId, user.$id);
 }
 
 export async function ensureCurrentUserProfile() {
   try {
     return await getCurrentUserProfile();
-  } catch {
+  } catch (error) {
+    console.error("Failed to load current user profile:", error);
     const user = await account.get();
 
     return createOrUpdateUserProfile({
@@ -55,13 +56,13 @@ export async function createOrUpdateUserProfile(profile: Omit<UserProfile, "crea
   const usersCollectionId = getUsersCollectionId();
 
   try {
-    const existing = await databases.getDocument<any>(
+    const existing = await databases.getDocument<UserProfile & Models.Document>(
       databaseId,
       usersCollectionId,
       profile.userId
     );
 
-    return databases.updateDocument<any>(
+    return databases.updateDocument<UserProfile & Models.Document>(
       databaseId,
       usersCollectionId,
       profile.userId,
@@ -71,8 +72,9 @@ export async function createOrUpdateUserProfile(profile: Omit<UserProfile, "crea
         updatedAt: new Date().toISOString(),
       }
     );
-  } catch {
-    return databases.createDocument<any>(
+  } catch (error) {
+    console.error("Falling back to create user profile:", error);
+    return databases.createDocument<UserProfile & Models.Document>(
       databaseId,
       usersCollectionId,
       ID.custom(profile.userId),
@@ -94,7 +96,7 @@ export async function updateUserProfile(patch: Partial<UserProfile>) {
   const databaseId = getDatabaseId();
   const usersCollectionId = getUsersCollectionId();
 
-  return databases.updateDocument<any>(
+  return databases.updateDocument<UserProfile & Models.Document>(
     databaseId,
     usersCollectionId,
     user.$id,

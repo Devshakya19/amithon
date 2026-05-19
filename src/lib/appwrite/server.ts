@@ -5,9 +5,12 @@ const { endpoint, projectId, apiKey } = getServerConfig();
 
 const adminClient = new Client().setEndpoint(endpoint).setProject(projectId);
 
-// Some Appwrite SDK versions may not expose setKey; guard the call.
-if (apiKey && typeof (adminClient as any).setKey === "function") {
-  (adminClient as any).setKey(apiKey);
+function hasSetKey(client: Client): client is Client & { setKey: (key: string) => Client } {
+  return typeof (client as Client & { setKey?: unknown }).setKey === "function";
+}
+
+if (apiKey && hasSetKey(adminClient)) {
+  adminClient.setKey(apiKey);
 }
 
 const adminDatabases = new Databases(adminClient);
