@@ -1,478 +1,464 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
+import { useEffect, useMemo, useState } from "react";
+import { motion } from "framer-motion";
 import {
-  Search,
-  Calendar,
-  MapPin,
-  Clock,
-  ChevronRight,
-  ArrowRight,
-  BookOpen,
-  Medal,
-  TrendingUp,
   Bell,
-  X,
+  BookOpen,
+  Calendar,
+  ChevronRight,
   Filter,
+  Medal,
+  MapPin,
+  Search,
   SlidersHorizontal,
+  TrendingUp,
+  X,
 } from "lucide-react";
+import { useUser } from "@/context/UserProvider";
+import { apiGet } from "@/lib/api";
+import type { CertificateRecord, EventRecord, NotificationRecord, RegistrationRecord } from "@/lib/types";
+import { departments } from "@/lib/departments";
+import { getPosterPreviewUrl } from "@/lib/appwrite/storage";
+import { formatShortDate, getDepartmentName, getEventStatusMeta } from "@/lib/dashboard";
 
-// ─── Types ───
-type EventStatus = "registered" | "pending" | "cancelled";
-type EventCard = {
-  id: string;
-  title: string;
-  description: string;
-  date: string;
-  venue: string;
-  department: string;
-  posterUrl?: string;
-  registeredCount: number;
-  registrationLimit: number;
-  status: EventStatus;
-  promoted: boolean;
+type LiveRegistrationsResponse = {
+  data: RegistrationRecord[];
+  total: number;
+  events: Record<string, EventRecord>;
 };
 
-// ─── Mock Data ───
-const MOCK_SPOTLIGHT: EventCard = {
-  id: "1",
-  title: "Advanced AI & ML Summit",
-  description: "Explore cutting-edge AI technologies with industry experts.",
-  date: "May 25, 2026",
-  venue: "Auditorium, Block A",
-  department: "ASET",
-  registeredCount: 45,
-  registrationLimit: 100,
-  status: "registered",
-  promoted: true,
-};
-
-const MOCK_AGENDA: EventCard[] = [
-  { id: "2", title: "Advanced AI & ML Summit", date: "May 25, 2026", venue: "Auditorium", department: "ASET", registeredCount: 45, registrationLimit: 100, status: "registered", promoted: true, description: "" },
-  { id: "3", title: "Web Development Workshop", date: "May 28, 2026", venue: "Lab 201", department: "ASET", registeredCount: 30, registrationLimit: 50, status: "registered", promoted: false, description: "" },
-  { id: "4", title: "Hackathon 2026", date: "June 1, 2026", venue: "Innovation Hub", department: "ASET", registeredCount: 67, registrationLimit: 100, status: "pending", promoted: true, description: "" },
-];
-
-const MOCK_DISCOVER: EventCard[] = [
-  { id: "5", title: "Robotics Workshop", date: "May 30, 2026", venue: "Lab 301", department: "ASET", registeredCount: 20, registrationLimit: 50, status: "registered", promoted: false, description: "" },
-  { id: "6", title: "Cloud Computing Bootcamp", date: "June 5, 2026", venue: "Online", department: "ASET", registeredCount: 45, registrationLimit: 45, status: "pending", promoted: false, description: "" },
-  { id: "7", title: "Blockchain Seminar", date: "June 10, 2026", venue: "Auditorium", department: "ASET (LS)", registeredCount: 10, registrationLimit: 100, status: "cancelled", promoted: false, description: "" },
-  { id: "8", title: "UI/UX Design Hackathon", date: "June 15, 2026", venue: "Design Lab", department: "ASET", registeredCount: 5, registrationLimit: 30, status: "registered", promoted: false, description: "" },
-  { id: "9", title: "Competitive Programming", date: "June 20, 2026", venue: "Room 105", department: "ASECS", registeredCount: 15, registrationLimit: 100, status: "registered", promoted: false, description: "" },
-  { id: "10", title: "Python Fundamentals", date: "June 25, 2026", venue: "Lab 401", department: "ASMS", registeredCount: 0, registrationLimit: 50, status: "registered", promoted: false, description: "" },
-];
-
-const DEPARTMENTS = ["All Departments", "ASET", "ASET (Life Sciences)", "ASECS", "ASMS", "ASOL", "AIB", "AJKM"];
-
-const STATS = {
-  totalEvents: 12,
-  upcoming: 3,
-  certificates: 2,
-};
-
-// ─── Helpers ───
-function getFillPercent(current: number, limit: number) {
-  if (limit <= 0) return 0;
-  return Math.min(100, Math.round((current / limit) * 100));
-}
-
-function getFillColor(pct: number) {
-  if (pct >= 95) return "bg-red-500";
-  if (pct >= 80) return "bg-orange-500";
-  return "bg-green-500";
-}
-
-function StatusBadge({ status }: { status: EventStatus }) {
-  const map: Record<EventStatus, { label: string; className: string }> = {
-    registered: { label: "Registered", className: "bg-green-500/15 text-green-400 border-green-500/30" },
-    pending: { label: "Pending", className: "bg-yellow-500/15 text-yellow-400 border-yellow-500/30" },
-    cancelled: { label: "Cancelled", className: "bg-red-500/15 text-red-400 border-red-500/30" },
-  };
-  const s = map[status];
-  return (
-    <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium border ${s.className}`}>
-      {s.label}
-    </span>
-  );
-}
-
-// ─── Main Component ───
 export default function StudentDashboardPage() {
+  const { profile } = useUser();
+  const [events, setEvents] = useState<EventRecord[]>([]);
+  const [registrations, setRegistrations] = useState<RegistrationRecord[]>([]);
+  const [registrationEvents, setRegistrationEvents] = useState<Record<string, EventRecord>>({});
+  const [certificates, setCertificates] = useState<CertificateRecord[]>([]);
+  const [notifications, setNotifications] = useState<NotificationRecord[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState("");
-  const [deptFilter, setDeptFilter] = useState("All Departments");
-  const [agendaView, setAgendaView] = useState<"timeline" | "list">("timeline");
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 6;
+  const [deptFilter, setDeptFilter] = useState("all");
+  const [viewMode, setViewMode] = useState<"timeline" | "grid">("grid");
 
-  const filteredDiscover = MOCK_DISCOVER.filter(
-    (e) =>
-      (deptFilter === "All Departments" || e.department === deptFilter) &&
-      e.title.toLowerCase().includes(search.toLowerCase())
+  useEffect(() => {
+    let active = true;
+
+    async function load() {
+      try {
+        setIsLoading(true);
+
+        const [eventsResp, registrationsResp, certificatesResp, notificationsResp] = await Promise.all([
+          apiGet<{ data: EventRecord[]; total: number }>("/api/events?scope=public&limit=100"),
+          apiGet<LiveRegistrationsResponse>("/api/registrations?scope=mine&includeEvent=true&limit=100"),
+          apiGet<{ data: CertificateRecord[]; total: number }>("/api/certificates"),
+          apiGet<{ data: NotificationRecord[]; total: number }>("/api/notifications?limit=10"),
+        ]);
+
+        if (!active) return;
+
+        setEvents(eventsResp.data ?? []);
+        setRegistrations(registrationsResp.data ?? []);
+        setRegistrationEvents(registrationsResp.events ?? {});
+        setCertificates(certificatesResp.data ?? []);
+        setNotifications(notificationsResp.data ?? []);
+      } catch {
+        if (active) {
+          setEvents([]);
+          setRegistrations([]);
+          setRegistrationEvents({});
+          setCertificates([]);
+          setNotifications([]);
+        }
+      } finally {
+        if (active) {
+          setIsLoading(false);
+        }
+      }
+    }
+
+    load();
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const featuredEvent = useMemo(
+    () => events.find((event) => event.promoted && event.status === "published") ?? events[0] ?? null,
+    [events]
   );
-  const totalPages = Math.ceil(filteredDiscover.length / itemsPerPage);
-  const paginatedDiscover = filteredDiscover.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
+
+  const upcomingEvents = useMemo(
+    () =>
+      events.filter((event) => {
+        const eventDate = new Date(event.dateStart);
+        return event.status === "published" && !Number.isNaN(eventDate.getTime()) && eventDate >= new Date();
+      }),
+    [events]
   );
+
+  const filteredEvents = useMemo(() => {
+    const query = search.trim().toLowerCase();
+
+    return events.filter((event) => {
+      const matchesDept = deptFilter === "all" || event.deptId === deptFilter;
+      const matchesQuery =
+        !query ||
+        event.title.toLowerCase().includes(query) ||
+        event.description.toLowerCase().includes(query) ||
+        getDepartmentName(event.deptId).toLowerCase().includes(query);
+
+      return matchesDept && matchesQuery;
+    });
+  }, [deptFilter, events, search]);
+
+  const agendaItems = useMemo(
+    () =>
+      registrations
+        .map((registration) => ({
+          registration,
+          event: registrationEvents[registration.eventId],
+        }))
+        .filter((item) => item.event),
+    [registrationEvents, registrations]
+  );
+
+  const totalEvents = events.length;
+  const totalRegistrations = registrations.length;
+  const totalCertificates = certificates.length;
+  const unreadNotifications = notifications.filter((notification) => !notification.isRead).length;
 
   return (
-    <div className="min-h-screen bg-background text-on-surface">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-8">
-        {/* ─── Welcome Header ─── */}
-        <section className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-primary/20 via-primary/5 to-secondary/10 border border-white/10 p-6 md:p-8">
-          <div className="absolute top-0 right-0 w-72 h-72 bg-primary/20 blur-[100px] rounded-full pointer-events-none" />
-          <div className="relative flex flex-col md:flex-row md:items-center gap-6">
-            <div className="shrink-0 w-20 h-20 md:w-24 md:h-24 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-3xl font-bold text-white shadow-lg shadow-primary/30">
-              AK
-            </div>
-            <div className="flex-1">
-              <h1 className="text-2xl md:text-4xl font-black tracking-tight">
-                Hello, <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary">Aarav</span>
-                <span className="inline-block ml-1">👋</span>
-              </h1>
-              <p className="text-on-surface-variant mt-1">Welcome to your learning hub</p>
-            </div>
-            <div className="flex gap-3">
-              <button className="relative p-2 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-colors">
-                <Bell className="w-5 h-5" />
-                <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full text-[10px] font-bold flex items-center justify-center text-white">3</span>
-              </button>
-            </div>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-6">
-            {[
-              { icon: BookOpen, label: "Events", value: String(STATS.totalEvents), color: "from-blue-500 to-blue-600" },
-              { icon: Calendar, label: "Upcoming", value: String(STATS.upcoming), color: "from-green-500 to-emerald-600" },
-              { icon: Medal, label: "Certificates", value: String(STATS.certificates), color: "from-purple-500 to-pink-600" },
-            ].map((stat) => (
-              <div
-                key={stat.label}
-                className="flex items-center gap-3 p-4 rounded-2xl bg-white/5 border border-white/5 hover:border-primary/30 transition-all group cursor-default"
-              >
-                <div className={`shrink-0 w-10 h-10 rounded-xl bg-gradient-to-br ${stat.color} flex items-center justify-center shadow-lg`}>
-                  <stat.icon className="w-5 h-5 text-white" />
-                </div>
-                <div>
-                  <div className="text-2xl font-bold">{stat.value}</div>
-                  <div className="text-xs text-on-surface-variant">{stat.label}</div>
-                </div>
+    <div className="min-h-screen bg-background text-on-surface px-4 sm:px-6 lg:px-8 py-6">
+      <div className="max-w-7xl mx-auto space-y-8">
+        <motion.section
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="relative overflow-hidden rounded-[2rem] glass-panel p-6 md:p-8 border border-white/10"
+        >
+          <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-primary/20 blur-3xl" />
+          <div className="relative flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+            <div className="space-y-4 max-w-3xl">
+              <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.3em] text-on-surface-variant">
+                <BookOpen className="h-3.5 w-3.5 text-primary" />
+                Student dashboard
               </div>
-            ))}
-          </div>
-        </section>
+              <div className="space-y-2">
+                <h1 className="text-3xl md:text-5xl font-black tracking-tight">
+                  Welcome back, <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary">{profile?.fullName ?? "Student"}</span>
+                </h1>
+                <p className="max-w-2xl text-sm md:text-base text-on-surface-variant">
+                  Browse live events, track your registrations, and keep certificates in one place.
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-3">
+                <Link href="/dashboard/my-events" className="h-11 px-5 rounded-xl bg-primary text-on-primary font-semibold inline-flex items-center justify-center gap-2">
+                  My events <ChevronRight className="h-4 w-4" />
+                </Link>
+                <Link href="/dashboard/certificates" className="h-11 px-5 rounded-xl border border-white/10 bg-white/5 font-semibold inline-flex items-center justify-center gap-2 hover:bg-white/10 transition-colors">
+                  Certificates <Medal className="h-4 w-4" />
+                </Link>
+                <Link href="/dashboard/notifications" className="h-11 px-5 rounded-xl border border-white/10 bg-white/5 font-semibold inline-flex items-center justify-center gap-2 hover:bg-white/10 transition-colors">
+                  Notifications {unreadNotifications > 0 ? `(${unreadNotifications})` : ""} <Bell className="h-4 w-4" />
+                </Link>
+              </div>
+            </div>
 
-        {/* ─── Spotlight + Quick Actions ─── */}
-        <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2 relative overflow-hidden rounded-3xl bg-gradient-to-br from-primary/10 to-secondary/5 border border-white/10 p-6 group">
-            <div className="absolute top-0 right-0 w-48 h-48 bg-primary/20 blur-[80px] rounded-full pointer-events-none group-hover:bg-primary/30 transition-colors" />
-            <div className="relative">
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-gradient-to-r from-orange-500/20 to-red-500/20 text-orange-400 text-xs font-semibold border border-orange-500/30">
-                <span className="w-1.5 h-1.5 rounded-full bg-orange-400 animate-pulse" />
-                Featured Event
-              </span>
-              <div className="mt-4 flex flex-col md:flex-row gap-6">
-                <div className="w-full md:w-1/2 aspect-video rounded-2xl bg-gradient-to-br from-primary/30 to-secondary/30 flex items-center justify-center text-on-surface-variant text-sm border border-white/5">
-                  Poster Preview
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 lg:min-w-[420px]">
+              <StatPill label="Live events" value={totalEvents} icon={<BookOpen className="h-4 w-4" />} />
+              <StatPill label="Registrations" value={totalRegistrations} icon={<Calendar className="h-4 w-4" />} />
+              <StatPill label="Certificates" value={totalCertificates} icon={<Medal className="h-4 w-4" />} />
+            </div>
+          </div>
+        </motion.section>
+
+        <section className="grid gap-6 lg:grid-cols-[2fr_1fr]">
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="glass-panel rounded-[2rem] p-6 md:p-8"
+          >
+            <div className="flex items-center justify-between gap-3 mb-5">
+              <div>
+                <h2 className="text-2xl font-bold">Featured event</h2>
+                <p className="text-sm text-on-surface-variant">One highlighted live event from Appwrite.</p>
+              </div>
+              {featuredEvent ? (
+                <span className={`text-xs font-semibold uppercase tracking-[0.25em] border rounded-full px-3 py-1 ${getEventStatusMeta(featuredEvent.status).className}`}>
+                  {getEventStatusMeta(featuredEvent.status).label}
+                </span>
+              ) : null}
+            </div>
+
+            {featuredEvent ? (
+              <div className="grid gap-6 xl:grid-cols-[1.1fr_1fr]">
+                <div className="overflow-hidden rounded-2xl border border-white/10 bg-white/5">
+                  {featuredEvent.posterFileId ? (
+                    <img
+                      src={getPosterPreviewUrl(featuredEvent.posterFileId)}
+                      alt={featuredEvent.title}
+                      className="h-full w-full object-cover min-h-[240px]"
+                    />
+                  ) : (
+                    <div className="min-h-[240px] flex items-center justify-center bg-gradient-to-br from-primary/20 via-secondary/10 to-transparent text-on-surface-variant">
+                      Event poster preview
+                    </div>
+                  )}
                 </div>
-                <div className="flex-1 space-y-3">
-                  <h3 className="text-xl font-bold">{MOCK_SPOTLIGHT.title}</h3>
-                  <div className="space-y-1.5 text-sm text-on-surface-variant">
-                    <div className="flex items-center gap-2">
-                      <Calendar className="w-4 h-4 text-primary" />
-                      {MOCK_SPOTLIGHT.date}
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <MapPin className="w-4 h-4 text-primary" />
-                      {MOCK_SPOTLIGHT.venue}
-                    </div>
-                  </div>
+
+                <div className="flex flex-col gap-4">
                   <div>
-                    <div className="flex justify-between text-xs mb-1">
-                      <span className="text-on-surface-variant">Registrations</span>
-                      <span className="font-medium">{MOCK_SPOTLIGHT.registeredCount}/{MOCK_SPOTLIGHT.registrationLimit}</span>
+                    <h3 className="text-2xl font-bold">{featuredEvent.title}</h3>
+                    <p className="mt-2 text-sm text-on-surface-variant line-clamp-4">{featuredEvent.description}</p>
+                  </div>
+                  <div className="grid gap-3 text-sm text-on-surface-variant">
+                    <MetaRow icon={<Calendar className="h-4 w-4 text-primary" />} label={formatShortDate(featuredEvent.dateStart)} />
+                    <MetaRow icon={<MapPin className="h-4 w-4 text-primary" />} label={featuredEvent.venue} />
+                    <MetaRow icon={<TrendingUp className="h-4 w-4 text-primary" />} label={`${featuredEvent.registrationCount ?? 0}/${featuredEvent.registrationLimit ?? "∞"} registrations`} />
+                  </div>
+
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between text-xs font-medium text-on-surface-variant">
+                      <span>Registration progress</span>
+                      <span>{featuredEvent.registrationCount ?? 0}/{featuredEvent.registrationLimit > 0 ? featuredEvent.registrationLimit : "∞"}</span>
                     </div>
                     <div className="h-2 rounded-full bg-white/10 overflow-hidden">
                       <div
-                        className={`h-full rounded-full transition-all ${getFillColor(getFillPercent(MOCK_SPOTLIGHT.registeredCount, MOCK_SPOTLIGHT.registrationLimit))}`}
-                        style={{ width: `${getFillPercent(MOCK_SPOTLIGHT.registeredCount, MOCK_SPOTLIGHT.registrationLimit)}%` }}
+                        className="h-full rounded-full bg-gradient-to-r from-primary to-secondary"
+                        style={{
+                          width:
+                            featuredEvent.registrationLimit && featuredEvent.registrationLimit > 0
+                              ? `${Math.min(100, Math.round(((featuredEvent.registrationCount ?? 0) / featuredEvent.registrationLimit) * 100))}%`
+                              : "14%",
+                        }}
                       />
                     </div>
                   </div>
-                  <button className="w-full h-11 rounded-xl bg-primary text-on-primary font-semibold hover:brightness-110 transition-all flex items-center justify-center gap-2">
-                    View Details <ChevronRight className="w-4 h-4" />
-                  </button>
+
+                  <Link href={`/events/${featuredEvent.$id}`} className="h-11 rounded-xl bg-primary text-on-primary font-semibold inline-flex items-center justify-center gap-2">
+                    View details <ChevronRight className="h-4 w-4" />
+                  </Link>
                 </div>
               </div>
-            </div>
-          </div>
-
-          <div className="space-y-3">
-            {[
-              { icon: BookOpen, label: "Browse All Events", desc: "Discover technical events across departments", href: "#" },
-              { icon: Calendar, label: "My Registrations", desc: "View & manage your registered events", href: "#" },
-              { icon: Medal, label: "Achievements", desc: "Your badges & certificates", href: "#" },
-            ].map((action) => (
-              <Link
-                key={action.label}
-                href={action.href}
-                className="flex items-center gap-4 p-4 rounded-2xl bg-white/[0.03] border border-white/5 hover:border-primary/30 hover:bg-primary/5 transition-all group"
-              >
-                <div className="shrink-0 w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary group-hover:scale-110 group-hover:bg-primary/20 transition-all">
-                  <action.icon className="w-5 h-5" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="text-sm font-semibold">{action.label}</div>
-                  <div className="text-xs text-on-surface-variant truncate">{action.desc}</div>
-                </div>
-                <ChevronRight className="w-4 h-4 text-on-surface-variant group-hover:text-primary group-hover:translate-x-0.5 transition-all shrink-0" />
-              </Link>
-            ))}
-          </div>
-        </section>
-
-        {/* ─── Your Agenda ─── */}
-        <section>
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-bold">Your Agenda</h2>
-            <div className="flex gap-1 p-1 rounded-xl bg-white/5 border border-white/10">
-              {(["timeline", "list"] as const).map((view) => (
-                <button
-                  key={view}
-                  onClick={() => setAgendaView(view)}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all capitalize ${
-                    agendaView === view ? "bg-primary text-on-primary" : "text-on-surface-variant hover:text-on-surface"
-                  }`}
-                >
-                  {view}
-                </button>
-              ))}
-            </div>
-          </div>
-          {MOCK_AGENDA.length === 0 ? (
-            <div className="text-center py-12 rounded-2xl border border-dashed border-white/10">
-              <div className="text-4xl mb-3">🎯</div>
-              <p className="text-on-surface-variant">No upcoming events yet!</p>
-              <button className="mt-3 px-5 py-2 rounded-xl bg-primary text-on-primary text-sm font-semibold">
-                Browse Events
-              </button>
-            </div>
-          ) : agendaView === "timeline" ? (
-            <div className="space-y-4">
-              {["May 2026", "June 2026"].map((month) => {
-                const monthEvents = MOCK_AGENDA.filter((e) => e.date.includes(month.split(" ")[0]));
-                if (monthEvents.length === 0) return null;
-                return (
-                  <div key={month}>
-                    <div className="text-xs font-semibold text-on-surface-variant uppercase tracking-wider mb-3">{month}</div>
-                    <div className="space-y-3">
-                      {monthEvents.map((event) => (
-                        <div key={event.id} className="flex gap-4 p-4 rounded-2xl bg-white/[0.03] border border-white/5 hover:border-white/20 transition-all">
-                          <div className="shrink-0 w-12 h-12 rounded-xl bg-primary/10 flex flex-col items-center justify-center">
-                            <span className="text-lg font-bold text-primary">{event.date.split(" ")[1]}</span>
-                            <span className="text-[10px] text-on-surface-variant">{event.date.split(" ")[0].slice(0, 3)}</span>
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-start justify-between gap-2">
-                              <div>
-                                <h4 className="font-semibold">{event.title}</h4>
-                                <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-on-surface-variant mt-1">
-                                  <span className="flex items-center gap-1">
-                                    <MapPin className="w-3 h-3" />
-                                    {event.venue}
-                                  </span>
-                                </div>
-                              </div>
-                              <StatusBadge status={event.status} />
-                            </div>
-                            <div className="flex gap-2 mt-2">
-                              <button className="text-xs text-primary font-medium hover:underline">View Details</button>
-                              {event.status === "registered" && (
-                                <button className="text-xs text-red-400 font-medium hover:underline">Cancel</button>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          ) : (
-            <div className="space-y-2">
-              {MOCK_AGENDA.map((event) => (
-                <div key={event.id} className="flex items-center gap-4 p-4 rounded-2xl bg-white/[0.03] border border-white/5 hover:border-white/20 transition-all">
-                  <div className="flex-1 min-w-0">
-                    <h4 className="font-semibold text-sm">{event.title}</h4>
-                    <div className="flex items-center gap-3 text-xs text-on-surface-variant mt-0.5">
-                      <span className="flex items-center gap-1">
-                        <Calendar className="w-3 h-3" />
-                        {event.date}
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <MapPin className="w-3 h-3" />
-                        {event.venue}
-                      </span>
-                    </div>
-                  </div>
-                  <StatusBadge status={event.status} />
-                  <ChevronRight className="w-4 h-4 text-on-surface-variant shrink-0" />
-                </div>
-              ))}
-            </div>
-          )}
-          {MOCK_AGENDA.length > 0 && (
-            <Link href="#" className="inline-flex items-center gap-1 text-sm text-primary font-medium mt-3 hover:underline">
-              View All Registrations <ArrowRight className="w-4 h-4" />
-            </Link>
-          )}
-        </section>
-
-        {/* ─── Discover Events ─── */}
-        <section>
-          <h2 className="text-xl font-bold mb-4">Discover Events</h2>
-          <div className="flex flex-col sm:flex-row gap-3 mb-6">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-on-surface-variant" />
-              <input
-                value={search}
-                onChange={(e) => { setSearch(e.target.value); setCurrentPage(1); }}
-                placeholder="Search events..."
-                className="w-full h-11 pl-10 pr-4 rounded-xl bg-white/5 border border-white/10 text-sm text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:border-primary/50 transition-colors"
-              />
-              {search && (
-                <button onClick={() => setSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2">
-                  <X className="w-4 h-4 text-on-surface-variant hover:text-on-surface" />
-                </button>
-              )}
-            </div>
-            <div className="relative">
-              <Filter className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-on-surface-variant pointer-events-none" />
-              <select
-                value={deptFilter}
-                onChange={(e) => setDeptFilter(e.target.value)}
-                className="h-11 pl-10 pr-8 rounded-xl bg-white/5 border border-white/10 text-sm text-on-surface appearance-none cursor-pointer focus:outline-none focus:border-primary/50"
-              >
-                {DEPARTMENTS.map((d) => (
-                  <option key={d} value={d} className="bg-background">{d}</option>
-                ))}
-              </select>
-              <SlidersHorizontal className="absolute right-3 top-1/2 -translate-y-1/2 w-3 h-3 text-on-surface-variant pointer-events-none" />
-            </div>
-            {(search || deptFilter !== "All Departments") && (
-              <button
-                onClick={() => { setSearch(""); setDeptFilter("All Departments"); }}
-                className="h-11 px-4 rounded-xl border border-white/10 text-sm text-on-surface-variant hover:text-on-surface transition-colors"
-              >
-                Clear
-              </button>
+            ) : (
+              <div className="rounded-2xl border border-dashed border-white/10 p-10 text-center text-on-surface-variant">
+                No public events are available yet.
+              </div>
             )}
+          </motion.div>
+
+          <motion.aside
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="glass-panel rounded-[2rem] p-6 md:p-8"
+          >
+            <h2 className="text-2xl font-bold mb-4">Quick actions</h2>
+            <div className="space-y-3">
+              {[
+                { label: "Browse events", desc: "Discover live opportunities", href: "#discover" },
+                { label: "My registrations", desc: "Track your registrations", href: "/dashboard/my-events" },
+                { label: "Certificates", desc: "Download issued certificates", href: "/dashboard/certificates" },
+              ].map((item) => (
+                <Link key={item.label} href={item.href} className="flex items-center gap-4 rounded-2xl border border-white/10 bg-white/5 p-4 hover:bg-white/10 transition-colors">
+                  <div className="h-10 w-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
+                    <ChevronRight className="h-4 w-4" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="font-semibold">{item.label}</div>
+                    <div className="text-xs text-on-surface-variant">{item.desc}</div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+
+            <div className="mt-6 rounded-2xl border border-white/10 bg-white/5 p-4">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="font-semibold">Notifications</h3>
+                <span className="text-xs text-on-surface-variant">{unreadNotifications} unread</span>
+              </div>
+              <div className="space-y-2">
+                {notifications.slice(0, 3).map((notification) => (
+                  <div key={notification.$id} className={`rounded-xl px-3 py-2 text-sm ${notification.isRead ? "bg-white/5 text-on-surface-variant" : "bg-primary/10 text-on-surface"}`}>
+                    <div className="font-medium">{notification.title}</div>
+                    <div className="text-xs opacity-80">{notification.body}</div>
+                  </div>
+                ))}
+                {notifications.length === 0 ? <div className="text-sm text-on-surface-variant">No notifications yet.</div> : null}
+              </div>
+            </div>
+          </motion.aside>
+        </section>
+
+        <section className="glass-panel rounded-[2rem] p-6 md:p-8" id="agenda">
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between mb-5">
+            <div>
+              <h2 className="text-2xl font-bold">Your agenda</h2>
+              <p className="text-sm text-on-surface-variant">Live registrations loaded from Appwrite.</p>
+            </div>
+            <div className="inline-flex rounded-xl border border-white/10 bg-white/5 p-1">
+              {(["grid", "timeline"] as const).map((mode) => (
+                <button key={mode} onClick={() => setViewMode(mode)} className={`rounded-lg px-3 py-2 text-xs font-semibold uppercase tracking-[0.2em] ${viewMode === mode ? "bg-primary text-on-primary" : "text-on-surface-variant"}`}>
+                  {mode}
+                </button>
+              ))}
+            </div>
           </div>
 
-          {paginatedDiscover.length === 0 ? (
-            <div className="text-center py-16 rounded-2xl border border-dashed border-white/10">
-              <div className="text-4xl mb-3">🔍</div>
-              <p className="text-on-surface-variant">No events match your search</p>
-              <button
-                onClick={() => { setSearch(""); setDeptFilter("All Departments"); }}
-                className="mt-3 px-5 py-2 rounded-xl bg-primary text-on-primary text-sm font-semibold"
-              >
-                Clear Filters
-              </button>
+          {isLoading ? (
+            <div className="text-on-surface-variant">Loading dashboard data...</div>
+          ) : agendaItems.length === 0 ? (
+            <div className="rounded-2xl border border-dashed border-white/10 p-8 text-center text-on-surface-variant">
+              You haven’t registered for any events yet.
+            </div>
+          ) : viewMode === "timeline" ? (
+            <div className="space-y-3">
+              {agendaItems.map(({ registration, event }) => (
+                <div key={registration.$id} className="flex gap-4 rounded-2xl border border-white/10 bg-white/5 p-4">
+                  <div className="h-12 w-12 rounded-2xl bg-primary/10 text-primary flex flex-col items-center justify-center">
+                    <span className="text-sm font-bold">{new Date(registration.createdAt).getDate()}</span>
+                    <span className="text-[10px] uppercase">{new Date(registration.createdAt).toLocaleString("en-IN", { month: "short" })}</span>
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <h3 className="font-semibold truncate">{event.title}</h3>
+                        <p className="text-xs text-on-surface-variant">{getDepartmentName(event.deptId)} · {event.venue}</p>
+                      </div>
+                      <span className={`rounded-full border px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] ${getEventStatusMeta(event.status).className}`}>{getEventStatusMeta(event.status).label}</span>
+                    </div>
+                    <div className="mt-2 flex items-center gap-3 text-xs text-on-surface-variant">
+                      <span>Registered: {formatShortDate(registration.createdAt)}</span>
+                      <span>Status: {registration.status}</span>
+                    </div>
+                    <div className="mt-3 flex flex-wrap gap-3">
+                      <Link href={`/events/${event.$id}`} className="text-sm font-semibold text-primary hover:underline">View details</Link>
+                      {registration.status === "registered" ? <span className="text-sm text-green-400">Active registration</span> : <span className="text-sm text-red-400">Cancelled</span>}
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
           ) : (
-            <>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {paginatedDiscover.map((event) => {
-                  const pct = getFillPercent(event.registeredCount, event.registrationLimit);
-                  const isFull = event.registrationLimit > 0 && event.registeredCount >= event.registrationLimit;
-                  return (
-                    <div
-                      key={event.id}
-                      className="group rounded-2xl bg-white/[0.03] border border-white/5 overflow-hidden hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5 transition-all"
-                    >
-                      <div className="aspect-video bg-gradient-to-br from-primary/20 to-secondary/10 flex items-center justify-center text-on-surface-variant text-xs border-b border-white/5">
-                        Poster
-                      </div>
-                      <div className="p-4 space-y-3">
-                        <div>
-                          <h3 className="font-semibold group-hover:text-primary transition-colors">{event.title}</h3>
-                          <p className="text-xs text-on-surface-variant mt-0.5 line-clamp-2">{event.description || "No description"}</p>
-                        </div>
-                        <div className="space-y-1 text-xs text-on-surface-variant">
-                          <div className="flex items-center gap-1.5">
-                            <Calendar className="w-3.5 h-3.5" />
-                            {event.date}
-                          </div>
-                          <div className="flex items-center gap-1.5">
-                            <MapPin className="w-3.5 h-3.5" />
-                            {event.venue}
-                          </div>
-                        </div>
-                        <div>
-                          <div className="flex justify-between text-xs mb-1">
-                            <span className="text-on-surface-variant">{event.registeredCount}/{event.registrationLimit > 0 ? event.registrationLimit : "∞"} registered</span>
-                            {isFull && <span className="text-red-400 font-semibold">FULL</span>}
-                          </div>
-                          {event.registrationLimit > 0 && (
-                            <div className="h-1.5 rounded-full bg-white/10 overflow-hidden">
-                              <div
-                                className={`h-full rounded-full transition-all ${getFillColor(pct)}`}
-                                style={{ width: `${Math.min(100, pct)}%` }}
-                              />
-                            </div>
-                          )}
-                        </div>
-                        <button
-                          disabled={isFull}
-                          className={`w-full h-10 rounded-xl text-sm font-semibold transition-all flex items-center justify-center gap-1.5 ${
-                            isFull
-                              ? "bg-white/5 text-on-surface-variant/50 cursor-not-allowed"
-                              : "bg-primary text-on-primary hover:brightness-110"
-                          }`}
-                        >
-                          {isFull ? "FULL" : event.registeredCount > 0 ? "Register" : "Register"}
-                        </button>
-                      </div>
+            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+              {agendaItems.map(({ registration, event }) => (
+                <div key={registration.$id} className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <h3 className="font-semibold">{event.title}</h3>
+                      <p className="text-xs text-on-surface-variant mt-1">{getDepartmentName(event.deptId)}</p>
                     </div>
-                  );
-                })}
-              </div>
-
-              {totalPages > 1 && (
-                <div className="flex items-center justify-center gap-2 mt-8">
-                  <button
-                    disabled={currentPage === 1}
-                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                    className="h-9 px-3 rounded-xl border border-white/10 text-sm disabled:opacity-30 hover:border-white/30 transition-all"
-                  >
-                    Prev
-                  </button>
-                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                    <button
-                      key={page}
-                      onClick={() => setCurrentPage(page)}
-                      className={`h-9 w-9 rounded-xl text-sm font-medium transition-all ${
-                        currentPage === page ? "bg-primary text-on-primary" : "border border-white/10 hover:border-white/30"
-                      }`}
-                    >
-                      {page}
-                    </button>
-                  ))}
-                  <button
-                    disabled={currentPage === totalPages}
-                    onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                    className="h-9 px-3 rounded-xl border border-white/10 text-sm disabled:opacity-30 hover:border-white/30 transition-all"
-                  >
-                    Next
-                  </button>
+                    <span className={`rounded-full border px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] ${getEventStatusMeta(event.status).className}`}>{getEventStatusMeta(event.status).label}</span>
+                  </div>
+                  <div className="mt-4 space-y-1 text-xs text-on-surface-variant">
+                    <div>{formatShortDate(event.dateStart)} · {event.venue}</div>
+                    <div>Registered on {formatShortDate(registration.createdAt)}</div>
+                  </div>
                 </div>
-              )}
-            </>
+              ))}
+            </div>
+          )}
+        </section>
+
+        <section id="discover" className="glass-panel rounded-[2rem] p-6 md:p-8">
+          <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between mb-6">
+            <div>
+              <h2 className="text-2xl font-bold">Discover events</h2>
+              <p className="text-sm text-on-surface-variant">Search live events across departments.</p>
+            </div>
+            <div className="flex flex-wrap items-center gap-3">
+              <div className="relative min-w-[220px]">
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-on-surface-variant" />
+                <input
+                  value={search}
+                  onChange={(event) => setSearch(event.target.value)}
+                  placeholder="Search events..."
+                  className="input-recessed h-11 w-full rounded-xl pl-10 pr-10 text-on-surface"
+                />
+                {search ? (
+                  <button onClick={() => setSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant">
+                    <X className="h-4 w-4" />
+                  </button>
+                ) : null}
+              </div>
+              <div className="relative">
+                <Filter className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-on-surface-variant" />
+                <select value={deptFilter} onChange={(event) => setDeptFilter(event.target.value)} className="input-recessed h-11 rounded-xl pl-10 pr-10 text-on-surface">
+                  <option value="all">All departments</option>
+                  {departments.map((department) => (
+                    <option key={department.id} value={department.id}>
+                      {department.name}
+                    </option>
+                  ))}
+                </select>
+                <SlidersHorizontal className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-on-surface-variant" />
+              </div>
+            </div>
+          </div>
+
+          {filteredEvents.length === 0 ? (
+            <div className="rounded-2xl border border-dashed border-white/10 p-8 text-center text-on-surface-variant">
+              No events match your filters.
+            </div>
+          ) : (
+            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+              {filteredEvents.map((event) => (
+                <article key={event.$id} className="overflow-hidden rounded-[1.5rem] border border-white/10 bg-white/5 transition hover:-translate-y-1 hover:border-primary/30">
+                  <div className="aspect-video bg-gradient-to-br from-primary/20 via-secondary/10 to-transparent">
+                    {event.posterFileId ? (
+                      <img src={getPosterPreviewUrl(event.posterFileId)} alt={event.title} className="h-full w-full object-cover" />
+                    ) : (
+                      <div className="flex h-full items-center justify-center text-sm text-on-surface-variant">Poster preview</div>
+                    )}
+                  </div>
+                  <div className="space-y-3 p-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <h3 className="font-semibold">{event.title}</h3>
+                        <p className="text-xs text-on-surface-variant mt-1 line-clamp-2">{event.description}</p>
+                      </div>
+                      <span className={`rounded-full border px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] ${getEventStatusMeta(event.status).className}`}>{getEventStatusMeta(event.status).label}</span>
+                    </div>
+                    <div className="space-y-1 text-xs text-on-surface-variant">
+                      <div className="flex items-center gap-2"><Calendar className="h-3.5 w-3.5" /> {formatShortDate(event.dateStart)}</div>
+                      <div className="flex items-center gap-2"><MapPin className="h-3.5 w-3.5" /> {event.venue}</div>
+                      <div>{getDepartmentName(event.deptId)}</div>
+                    </div>
+                    <div className="flex items-center justify-between text-xs text-on-surface-variant">
+                      <span>{event.registrationCount ?? 0}/{event.registrationLimit && event.registrationLimit > 0 ? event.registrationLimit : "∞"} registered</span>
+                      {event.promoted ? <span className="text-orange-400 font-semibold uppercase tracking-[0.2em]">Promoted</span> : null}
+                    </div>
+                    <Link href={`/events/${event.$id}`} className="h-10 rounded-xl bg-primary text-on-primary font-semibold inline-flex items-center justify-center w-full">
+                      View details
+                    </Link>
+                  </div>
+                </article>
+              ))}
+            </div>
           )}
         </section>
       </div>
+    </div>
+  );
+}
+
+function StatPill({ label, value, icon }: { label: string; value: number | string; icon: React.ReactNode }) {
+  return (
+    <div className="rounded-2xl border border-white/10 bg-white/5 p-4 flex items-center gap-3">
+      <div className="h-10 w-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center">{icon}</div>
+      <div>
+        <div className="text-2xl font-bold">{value}</div>
+        <div className="text-xs text-on-surface-variant">{label}</div>
+      </div>
+    </div>
+  );
+}
+
+function MetaRow({ icon, label }: { icon: React.ReactNode; label: string }) {
+  return (
+    <div className="flex items-center gap-2">
+      {icon}
+      <span>{label}</span>
     </div>
   );
 }

@@ -57,6 +57,24 @@ export default function Navbar() {
     return roleNavMap[profile.role] ?? [];
   }, [profile?.role]);
 
+  const dashboardHref = useMemo(() => {
+    if (!profile?.role) {
+      return "/dashboard/student";
+    }
+
+    switch (profile.role) {
+      case "coordinator":
+        return "/dashboard/coordinator";
+      case "faculty":
+        return "/dashboard/faculty";
+      case "hoi":
+        return "/dashboard/hoi";
+      case "student":
+      default:
+        return "/dashboard/student";
+    }
+  }, [profile?.role]);
+
   const displayName = profile?.fullName || profile?.email || "Account";
 
   useEffect(() => {
@@ -122,7 +140,7 @@ export default function Navbar() {
               </button>
             </div>
           ) : profile ? (
-            <Link href="/profile" className="flex items-center gap-2 text-white">
+            <Link href={dashboardHref} className="flex items-center gap-2 text-white">
               <UserCircle className="w-5 h-5" />
               <span className="max-w-[160px] truncate text-[11px] font-semibold uppercase tracking-[0.25em]">
                 {displayName}
@@ -198,7 +216,7 @@ export default function Navbar() {
               </>
             ) : profile ? (
               <Link
-                href="/profile"
+                href={dashboardHref}
                 className="text-lg font-semibold text-white uppercase tracking-widest flex items-center gap-2"
                 onClick={() => setIsMobileMenuOpen(false)}
               >
